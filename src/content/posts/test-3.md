@@ -1,0 +1,5 @@
+---
+type: note
+date: 2026-10-13
+---
+test
