@@ -2,83 +2,94 @@
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
-import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
 
 type Props = CollectionEntry<'blog'>['data'];
 
 const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 ---
 
-<html lang="en">
+<html lang="zh-CN">
 	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-		</style>
+		<BaseHead title={`${title} | ${SITE_TITLE}`} description={description} image={heroImage} />
 	</head>
 
 	<body>
-		<Header />
-		<main>
+		<div class="wrap">
+			<a class="home" href="/"><span class="marker">{SITE_TITLE}</span></a>
+
 			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
+				<header class="head">
+					<p class="eyebrow">
+						<FormattedDate date={pubDate} />
+						{
+							updatedDate && (
+								<span>
+									· updated <FormattedDate date={updatedDate} />
+								</span>
+							)
+						}
+					</p>
+					<h1>{title}</h1>
+				</header>
+
+				{heroImage && <Image class="hero" width={1020} height={510} src={heroImage} alt="" />}
+
 				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{updatedDate && (
-								<div class="last-updated-on">
-									Last updated on <FormattedDate date={updatedDate} />
-								</div>
-							)}
-						</div>
-						<h1>{title}</h1>
-						<hr />
-					</div>
 					<slot />
 				</div>
 			</article>
-		</main>
-		<Footer />
+
+			<a class="back" href="/">← 回到首页</a>
+		</div>
 	</body>
 </html>
+
+<style>
+	.wrap {
+		max-width: 720px;
+		margin: 0 auto;
+		padding: 28px 16px 72px;
+	}
+
+	.home {
+		color: var(--heading);
+		font-weight: 800;
+		text-decoration: none;
+	}
+
+	.home:hover {
+		background: none;
+	}
+
+	.head {
+		margin: clamp(48px, 9vh, 88px) 0 2rem;
+	}
+
+	.head h1 {
+		font-size: clamp(2rem, 5vw, 3rem);
+	}
+
+	.hero {
+		display: block;
+		width: 100%;
+		margin-bottom: 2rem;
+	}
+
+	.prose :global(h2) {
+		margin-top: 2em;
+		font-size: 1.6rem;
+	}
+
+	.prose :global(h3) {
+		margin-top: 1.6em;
+		font-size: 1.3rem;
+	}
+
+	.back {
+		display: inline-block;
+		margin-top: 3rem;
+		font-size: 0.9rem;
+	}
+</style>
