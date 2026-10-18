@@ -1,17 +1,50 @@
+@font-face {
+	font-family: 'PingFang SaTuo';
+	src: url('/fonts/pingfang-satuo.ttf') format('truetype');
+	font-display: swap;
+}
+
 /*
-  Paper + risograph look: warm paper background, blue ink body text,
-  olive headings and a yellow highlighter under titles.
+  wawa.blog — 初芽绿 + 桂花金. See DESIGN.md for the reasoning behind every value.
  */
 
 :root {
-	--paper: #f2eee3;
-	--ink: #3255a4;
-	--ink-soft: rgba(50, 85, 164, 0.7);
-	--heading: #2d3a12;
-	--highlight: #ffe800;
-	--line: rgba(50, 85, 164, 0.18);
-	--font-hand: 'Shantell Sans', 'LXGW WenKai', ui-rounded, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC',
-		'Microsoft YaHei', system-ui, sans-serif;
+	--bg: #f2f6e6;
+	--bg-edge: #dce6c6;
+	--ink: #2c3823;
+	--ink-soft: #4f5c45;
+	--ink-faint: #6f7b63;
+	--osmanthus: #d4a93f;
+	--link: #7e5b12;
+	--note-yellow: #f6e4a6;
+	--note-peach: #f6dfcf;
+	--note-cream: #fbf7ec;
+
+	/* Everything uses the same hand-written face as the title */
+	--font-hand: 'PingFang SaTuo', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive;
+	--font-ui: var(--font-hand);
+
+	--page-width: 900px;
+	--measure: 36em;
+
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #18211a;
+		--bg-edge: #2c3a2e;
+		--ink: #e6ebda;
+		--ink-soft: #b5bfa7;
+		--ink-faint: #93a08a;
+		--osmanthus: #c9a04a;
+		--link: #e2bf6e;
+		--note-yellow: #4a4224;
+		--note-peach: #4a3a2e;
+		--note-cream: #34392e;
+
+		color-scheme: dark;
+	}
 }
 
 *,
@@ -21,106 +54,111 @@
 }
 
 html {
-	background: var(--paper);
+	background: var(--bg);
 }
 
 body {
 	margin: 0;
 	min-height: 100vh;
 	font-family: var(--font-hand);
+	/* The font has a single weight; never fake bold or italic */
+	font-synthesis: none;
 	font-size: 18px;
 	line-height: 1.8;
 	color: var(--ink);
-	background-color: var(--paper);
-	/* faint paper grain */
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .3 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	background: var(--bg);
 	overflow-wrap: break-word;
 	-webkit-font-smoothing: antialiased;
 }
 
+main {
+	max-width: var(--page-width);
+	margin: 0 auto;
+	padding: 48px 16px 96px;
+}
+
 h1,
 h2,
-h3,
-h4 {
-	margin: 0 0 0.5rem;
-	color: var(--heading);
-	font-weight: 800;
-	line-height: 1.2;
-	letter-spacing: -0.01em;
+h3 {
+	margin: 0 0 0.6em;
+	font-weight: 700;
+	line-height: 1.4;
+	color: var(--ink);
 }
 
 p {
-	margin: 0 0 1em;
+	margin: 0 0 1.2em;
 }
 
 a {
-	color: var(--heading);
-	font-weight: 600;
-	text-decoration: underline;
-	text-decoration-thickness: 2px;
-	text-underline-offset: 3px;
+	color: var(--link);
+	text-decoration-color: color-mix(in srgb, var(--link) 40%, transparent);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 4px;
 }
 
 a:hover {
-	background: var(--highlight);
+	text-decoration-color: var(--osmanthus);
 }
 
-/* Yellow highlighter stroke behind a word or title */
-.marker {
-	display: inline;
-	padding: 0 0.1em;
-	background: linear-gradient(transparent 58%, var(--highlight) 58%, var(--highlight) 92%, transparent 92%);
-	box-decoration-break: clone;
-	-webkit-box-decoration-break: clone;
+a:focus-visible,
+button:focus-visible {
+	outline: 2px solid var(--link);
+	outline-offset: 3px;
+	border-radius: 2px;
 }
 
-.eyebrow {
-	margin: 0 0 0.25rem;
-	font-size: 0.72rem;
+/* Section labels, dates, small UI text */
+.label {
+	margin: 0 0 0.8em;
+	font-family: var(--font-ui);
+	font-size: 0.88rem;
 	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: var(--ink-faint);
+}
+
+/* Long-form reading text */
+.prose {
+	max-width: var(--measure);
+}
+
+.prose h2 {
+	margin-top: 2em;
+	font-size: 1.25rem;
+}
+
+.prose blockquote {
+	margin: 1.6em 0;
+	padding: 0.1em 0 0.1em 1.1em;
+	border-left: 2px solid var(--osmanthus);
 	color: var(--ink-soft);
 }
 
-img {
+.prose blockquote p:last-child {
+	margin-bottom: 0;
+}
+
+.prose img {
 	max-width: 100%;
 	height: auto;
-	border-radius: 12px;
 }
 
 code {
-	padding: 1px 6px;
-	font-size: 0.9em;
-	background: rgba(50, 85, 164, 0.08);
-	border-radius: 4px;
-}
-
-pre {
-	padding: 1.2em;
-	border-radius: 12px;
-	overflow-x: auto;
-}
-
-pre > code {
-	all: unset;
-}
-
-blockquote {
-	margin: 1.5em 0;
-	padding: 0.2em 0 0.2em 1em;
-	border-left: 4px solid var(--highlight);
+	padding: 1px 5px;
+	font-size: 0.88em;
+	background: var(--bg-edge);
+	border-radius: 3px;
 }
 
 hr {
+	margin: 2.4em 0;
 	border: none;
-	border-top: 2px dashed var(--line);
-	margin: 2em 0;
+	border-top: 1px solid var(--bg-edge);
 }
 
 ::selection {
-	background: var(--highlight);
-	color: var(--heading);
+	background: color-mix(in srgb, var(--osmanthus) 40%, transparent);
 }
 
 .sr-only {
@@ -130,4 +168,14 @@ hr {
 	overflow: hidden;
 	clip-path: inset(50%);
 	white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+	body {
+		font-size: 16px;
+	}
+
+	main {
+		padding-top: 32px;
+	}
 }

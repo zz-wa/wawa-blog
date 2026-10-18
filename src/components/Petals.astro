@@ -1,0 +1,82 @@
+---
+// 首页专用：几朵桂花慢慢飘落。只在打招呼区域里飘，不进入阅读区域。
+const petals = [
+	{ left: 12, delay: 0, duration: 19, size: 11 },
+	{ left: 46, delay: 6, duration: 23, size: 9 },
+	{ left: 71, delay: 12, duration: 21, size: 12 },
+	{ left: 88, delay: 3, duration: 26, size: 8 },
+];
+---
+
+<div class="petals" aria-hidden="true">
+	{
+		petals.map((p) => (
+			<span
+				class="petal"
+				style={`left:${p.left}%;width:${p.size}px;height:${p.size}px;animation-delay:${p.delay}s;animation-duration:${p.duration}s`}
+			>
+				<svg viewBox="-10 -10 20 20">
+					<g fill="currentColor">
+						<ellipse rx="3.4" ry="5.6" transform="translate(0 -4.2)" />
+						<ellipse rx="3.4" ry="5.6" transform="rotate(90) translate(0 -4.2)" />
+						<ellipse rx="3.4" ry="5.6" transform="rotate(180) translate(0 -4.2)" />
+						<ellipse rx="3.4" ry="5.6" transform="rotate(270) translate(0 -4.2)" />
+					</g>
+				</svg>
+			</span>
+		))
+	}
+</div>
+
+<style>
+	.petals {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		pointer-events: none;
+	}
+
+	.petal {
+		position: absolute;
+		top: -16px;
+		color: var(--osmanthus);
+		opacity: 0;
+		animation-name: fall;
+		animation-timing-function: linear;
+		animation-iteration-count: infinite;
+	}
+
+	.petal svg {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	@keyframes fall {
+		0% {
+			top: -16px;
+			opacity: 0;
+			transform: translateX(0) rotate(0deg);
+		}
+		10% {
+			opacity: 0.8;
+		}
+		50% {
+			transform: translateX(26px) rotate(160deg);
+		}
+		85% {
+			opacity: 0.7;
+		}
+		100% {
+			top: 100%;
+			opacity: 0;
+			transform: translateX(-8px) rotate(320deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.petals {
+			display: none;
+		}
+	}
+</style>

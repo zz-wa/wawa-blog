@@ -1,0 +1,45 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import SiteTitle from '../components/SiteTitle.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+interface Props {
+	title?: string;
+	description?: string;
+	/** The home page shows the big title itself, so it hides the small one. */
+	home?: boolean;
+}
+
+const { title, description = SITE_DESCRIPTION, home = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={title ? `${title} | ${SITE_TITLE}` : SITE_TITLE} description={description} />
+	</head>
+	<body>
+		{
+			!home && (
+				<header class="site-header">
+					<a href="/" aria-label="回到首页">
+						<SiteTitle size="small" />
+					</a>
+				</header>
+			)
+		}
+		<slot />
+	</body>
+</html>
+
+<style>
+	.site-header {
+		max-width: var(--page-width);
+		margin: 0 auto;
+		padding: 28px 16px 0;
+	}
+
+	.site-header a {
+		display: inline-block;
+	}
+</style>

@@ -1,0 +1,35 @@
+---
+// 平方洒脱体写的“wawa 的碎碎念”，做成矢量图嵌进页面（不分发字体文件）。
+// 要改标题文字：用 scripts/make-title-svg.py 重新生成 src/assets/site-title.svg
+import svg from '../assets/site-title.svg?raw';
+
+interface Props {
+	size?: 'large' | 'small';
+}
+
+const { size = 'large' } = Astro.props;
+---
+
+<span class:list={['site-title', size]} set:html={svg} />
+
+<style>
+	.site-title {
+		display: inline-block;
+		color: var(--ink);
+		line-height: 0;
+	}
+
+	.site-title :global(svg) {
+		display: block;
+		height: 100%;
+		width: auto;
+	}
+
+	.large {
+		height: clamp(40px, 7vw, 58px);
+	}
+
+	.small {
+		height: 24px;
+	}
+</style>

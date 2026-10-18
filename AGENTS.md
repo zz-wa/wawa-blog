@@ -1,3 +1,7 @@
+## Design
+
+Before changing anything visual or adding content types, read `DESIGN.md` in the repo root. It is the source of truth for colors, fonts, layout, the notes/reading content model and the `<Whisper>` interaction.
+
 ## Development
 
 When starting the dev server, use background mode:

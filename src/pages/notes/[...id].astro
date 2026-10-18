@@ -1,0 +1,71 @@
+---
+// 长的碎碎念在墙上只露一部分，点“读完”来到这里。
+import { getCollection, render } from 'astro:content';
+import StickyNote from '../../components/StickyNote.astro';
+import Whisper from '../../components/Whisper.astro';
+import Base from '../../layouts/Base.astro';
+import { byDateDesc, formatDate, type Post, wallLook } from '../../utils';
+
+export async function getStaticPaths() {
+	const posts = (await getCollection('posts')).sort(byDateDesc);
+	return posts
+		.map((post, index) => ({ post, index }))
+		.filter(({ post }) => post.data.type === 'note')
+		.map(({ post, index }) => ({ params: { id: post.id }, props: { post, index } }));
+}
+
+type Props = { post: Post; index: number };
+
+const { post, index } = Astro.props;
+const look = wallLook(post, index);
+const { Content } = await render(post);
+const date = formatDate(post.data.date);
+---
+
+<Base title={`碎碎念 ${date}`}>
+	<main>
+		<StickyNote
+			as="article"
+			color={look.color}
+			tilt={look.tilt > 0 ? 1.2 : -1.2}
+			pinColor={look.pinColor}
+			pinX={look.pinX}
+			radius={look.radius}
+			class="single"
+		>
+			<time class="date" datetime={post.data.date.toISOString()}>{date}</time>
+			<div class="body">
+				<Content components={{ Whisper }} />
+			</div>
+		</StickyNote>
+		<a class="back" href="/">← 回到墙上</a>
+	</main>
+</Base>
+
+<style>
+	main :global(.single) {
+		max-width: 34em;
+		margin-top: 24px;
+		padding: 36px 32px 28px;
+		font-size: 1.05rem;
+	}
+
+	.date {
+		display: block;
+		margin-bottom: 10px;
+		font-family: var(--font-ui);
+		font-size: 0.88rem;
+		color: var(--ink-faint);
+	}
+
+	.body :global(p:last-child) {
+		margin-bottom: 0;
+	}
+
+	.back {
+		display: inline-block;
+		margin-top: 40px;
+		font-family: var(--font-ui);
+		font-size: 0.9rem;
+	}
+</style>

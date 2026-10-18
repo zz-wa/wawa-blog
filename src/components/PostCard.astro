@@ -1,0 +1,170 @@
+---
+// 墙上的一张：碎碎念直接显示内容（太长就截断），读书显示书名和一两句感想。
+// 整张都能点，点进去是这一篇的完整页面。
+import { render } from 'astro:content';
+import { formatDate, NOTE_SHORT_LIMIT, plainText, type Post, postHref, wallLook } from '../utils';
+import StickyNote from './StickyNote.astro';
+import Whisper from './Whisper.astro';
+
+interface Props {
+	post: Post;
+	index: number;
+}
+
+const { post, index } = Astro.props;
+const look = wallLook(post, index);
+const text = plainText(post);
+const href = postHref(post);
+const { Content } = await render(post);
+
+const long = post.data.type === 'note' && text.length > NOTE_SHORT_LIMIT;
+const summary =
+	post.data.type === 'reading'
+		? (post.data.summary ?? (text.length > 60 ? `${text.slice(0, 60)}…` : text))
+		: '';
+const label =
+	post.data.type === 'reading'
+		? `读书：《${post.data.book}》`
+		: `碎碎念 ${formatDate(post.data.date)}`;
+
+// Inline, because these land on StickyNote's root element where this file's scoped CSS can't reach
+const style = [
+	`width: ${look.width}px`,
+	'max-width: 100%',
+	`translate: ${look.dx}px ${look.dy}px`,
+	`margin-top: ${look.marginTop}px`,
+	`margin-left: ${look.marginLeft}px`,
+].join('; ');
+---
+
+<StickyNote
+	as="article"
+	class="card"
+	color={look.color}
+	tilt={look.tilt}
+	pinColor={look.pinColor}
+	pinX={look.pinX}
+	radius={look.radius}
+	curl={look.curl}
+	style={style}
+>
+	{/* Covers the whole note so any spot opens the post; whisper dots sit above it */}
+	<a class="card-link" href={href} aria-label={label}></a>
+	{
+		post.data.type === 'reading' ? (
+			<>
+				<span class="tag">读书</span>
+				<h2 class="book">《{post.data.book}》</h2>
+				<p class="summary">{summary}</p>
+				<span class="meta">
+					{post.data.author} · {formatDate(post.data.date)}
+				</span>
+			</>
+		) : (
+			<>
+				<time class="meta" datetime={post.data.date.toISOString()}>
+					{formatDate(post.data.date)}
+				</time>
+				<div class:list={['body', { clipped: long }]}>
+					<Content components={{ Whisper }} />
+				</div>
+				{long && (
+					<span class="more" aria-hidden="true">
+						读完 →
+					</span>
+				)}
+			</>
+		)
+	}
+</StickyNote>
+
+<style>
+	.card-link {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		border-radius: inherit;
+	}
+
+	.card-link:focus-visible {
+		outline: 2px solid var(--link);
+		outline-offset: 3px;
+	}
+
+	/* Keep whisper dots clickable on top of the card link */
+	.body :global(.whisper-dot) {
+		position: relative;
+		z-index: 2;
+	}
+
+	:global(.card) {
+		cursor: pointer;
+	}
+
+	.meta {
+		display: block;
+		font-family: var(--font-ui);
+		font-size: 0.88rem;
+		letter-spacing: 0.03em;
+		color: var(--ink-faint);
+	}
+
+	time.meta {
+		margin-bottom: 4px;
+	}
+
+	.body :global(p) {
+		margin: 0 0 0.5em;
+	}
+
+	.body :global(p:last-child) {
+		margin-bottom: 0;
+	}
+
+	.clipped {
+		max-height: 9.2em;
+		overflow: hidden;
+		mask-image: linear-gradient(#000 62%, transparent);
+	}
+
+	.more {
+		display: inline-block;
+		margin-top: 6px;
+		font-family: var(--font-ui);
+		font-size: 0.88rem;
+		color: var(--link);
+	}
+
+	.tag {
+		position: absolute;
+		top: 9px;
+		left: 12px;
+		padding: 0 6px;
+		font-family: var(--font-ui);
+		font-size: 0.88rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: var(--link);
+		border: 1px solid color-mix(in srgb, var(--link) 45%, transparent);
+		border-radius: 3px;
+	}
+
+	.book {
+		margin: 8px 0 6px;
+		font-family: var(--font-hand);
+		font-size: 1.15rem;
+		font-weight: 700;
+	}
+
+	.summary {
+		margin: 0 0 8px;
+		color: var(--ink-soft);
+	}
+
+	:global(.card):hover .book,
+	:global(.card):hover .more {
+		color: var(--link);
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+</style>

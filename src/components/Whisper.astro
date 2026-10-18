@@ -1,0 +1,135 @@
+---
+// 小声嘀咕：正文里只留一个桂花点，悬停或点一下在原位展开。
+// 用法（.mdx 文件里）：<Whisper>难道是我介绍的三辩太迷人了？</Whisper>
+const id = `whisper-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<span class="whisper"
+	><button
+		type="button"
+		class="whisper-dot"
+		aria-expanded="false"
+		aria-controls={id}
+		aria-label="小声嘀咕"></button><span class="whisper-text" id={id}><slot /></span></span
+>
+
+<style>
+	.whisper {
+		display: inline;
+	}
+
+	.whisper-dot {
+		display: inline-block;
+		width: 0.62em;
+		height: 0.62em;
+		margin: 0 0.18em 0 0.12em;
+		padding: 0;
+		vertical-align: 0.12em;
+		border: none;
+		border-radius: 50%;
+		background: var(--osmanthus);
+		cursor: pointer;
+		transition: transform 0.15s ease;
+	}
+
+	.whisper-dot:hover {
+		transform: scale(1.2);
+	}
+
+	.whisper-dot:focus-visible {
+		outline: 2px solid var(--link);
+		outline-offset: 3px;
+	}
+
+	.whisper-text {
+		font-family: var(--font-ui);
+		font-size: 0.82em;
+		color: var(--ink-faint);
+	}
+
+	.whisper-text::before {
+		content: '（';
+	}
+
+	.whisper-text::after {
+		content: '）';
+	}
+
+	/* Collapsed state — only when JS is running, so the text stays readable without it */
+	:global(html.js) .whisper-dot[aria-expanded='false'] + .whisper-text {
+		display: none;
+	}
+
+	.whisper-dot[aria-expanded='true'] + .whisper-text {
+		animation: whisper-in 0.22s ease-out;
+	}
+
+	.whisper-dot.breathe {
+		animation: breathe 1.4s ease-in-out 2;
+	}
+
+	@keyframes whisper-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes breathe {
+		0%,
+		100% {
+			box-shadow: 0 0 0 0 transparent;
+		}
+		50% {
+			box-shadow: 0 0 0 5px color-mix(in srgb, var(--osmanthus) 35%, transparent);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.whisper-dot,
+		.whisper-dot.breathe,
+		.whisper-dot[aria-expanded='true'] + .whisper-text {
+			animation: none;
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	const dots = document.querySelectorAll<HTMLButtonElement>('.whisper-dot');
+
+	dots.forEach((dot) => {
+		let pinned = false;
+		const set = (open: boolean) => dot.setAttribute('aria-expanded', String(open));
+
+		dot.addEventListener('click', () => {
+			pinned = !pinned;
+			set(pinned);
+		});
+		// Hover preview for mouse only; touch relies on click.
+		dot.addEventListener('pointerenter', (e) => {
+			if (e.pointerType === 'mouse') set(true);
+		});
+		dot.addEventListener('pointerleave', (e) => {
+			if (e.pointerType === 'mouse' && !pinned) set(false);
+		});
+	});
+
+	// The first dot on the page breathes once when it first scrolls into view.
+	const first = dots[0];
+	const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	if (first && !reduced && 'IntersectionObserver' in window) {
+		const io = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((e) => e.isIntersecting)) {
+					first.classList.add('breathe');
+					io.disconnect();
+				}
+			},
+			{ threshold: 1 },
+		);
+		io.observe(first);
+	}
+</script>

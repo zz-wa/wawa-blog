@@ -1,0 +1,115 @@
+---
+import { type NoteColor, PIN_COLORS } from '../utils';
+
+interface Props {
+	color: NoteColor;
+	tilt?: number;
+	/** Colour of the round push pin */
+	pinColor?: string;
+	/** Pin position, % from the left edge */
+	pinX?: number;
+	/** CSS border-radius; uneven values make it feel soft and hand-cut */
+	radius?: string;
+	curl?: boolean;
+	as?: 'article' | 'div' | 'aside';
+	class?: string;
+	style?: string;
+}
+
+const {
+	color,
+	tilt = 0,
+	pinColor = PIN_COLORS[0],
+	pinX = 50,
+	radius = '12px 9px 15px 10px',
+	curl = false,
+	as: Tag = 'div',
+	class: className,
+	style = '',
+} = Astro.props;
+---
+
+<Tag
+	class:list={['sticky', `sticky--${color}`, { 'sticky--curl': curl }, className]}
+	style={`--tilt: ${tilt}deg; --pin: ${pinColor}; --pin-x: ${pinX}%; --radius: ${radius}; ${style}`}
+>
+	<span class="pin" aria-hidden="true"></span>
+	<slot />
+</Tag>
+
+<style>
+	.sticky {
+		position: relative;
+		padding: 26px 20px 18px;
+		font-family: var(--font-hand);
+		font-size: 1rem;
+		line-height: 1.75;
+		color: var(--ink);
+		background: var(--note-bg);
+		border: 1px solid var(--note-edge);
+		border-radius: var(--radius);
+		transform: rotate(var(--tilt));
+	}
+
+	.sticky--yellow {
+		--note-bg: var(--note-yellow);
+	}
+
+	.sticky--peach {
+		--note-bg: var(--note-peach);
+	}
+
+	.sticky--cream {
+		--note-bg: var(--note-cream);
+	}
+
+	.sticky {
+		--note-edge: color-mix(in srgb, var(--note-bg) 76%, var(--ink) 24%);
+	}
+
+	/* Round coloured push pin */
+	.pin {
+		position: absolute;
+		z-index: 3;
+		top: 7px;
+		left: var(--pin-x);
+		width: 14px;
+		height: 14px;
+		margin-left: -7px;
+		border-radius: 50%;
+		background: var(--pin);
+		border: 1px solid color-mix(in srgb, var(--pin) 72%, #000 28%);
+		pointer-events: none;
+	}
+
+	/* little highlight so it reads as a round pin head */
+	.pin::after {
+		content: '';
+		position: absolute;
+		top: 2.5px;
+		left: 3px;
+		width: 4px;
+		height: 4px;
+		border-radius: 50%;
+		background: color-mix(in srgb, var(--pin) 35%, #fff 65%);
+	}
+
+	/* A soft, rounded dog-ear: wall colour where the paper lifted, the paper's back folding toward us. */
+	.sticky--curl::after {
+		content: '';
+		position: absolute;
+		z-index: 2;
+		right: -1px;
+		bottom: -1px;
+		width: 28px;
+		height: 28px;
+		background: linear-gradient(
+			315deg,
+			var(--bg) 50%,
+			color-mix(in srgb, var(--note-bg) 84%, var(--ink) 16%) 50%
+		);
+		border-top-left-radius: 10px;
+		border-bottom-right-radius: inherit;
+		pointer-events: none;
+	}
+</style>
