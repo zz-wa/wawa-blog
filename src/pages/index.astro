@@ -1,0 +1,22 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Waa</h1>
+			<p>Hi, I'm Wa 👋 这里是我的小站，正在建设中。</p>
+			<p>文章会放在 <a href="/blog">Blog</a> 里。</p>
+		</main>
+		<Footer />
+	</body>
+</html>
