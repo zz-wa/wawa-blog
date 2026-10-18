@@ -38,17 +38,45 @@ const {
 </Tag>
 
 <style>
+	/* Looks like a real sticky note: square-ish paper, a slightly darker adhesive strip along the top,
+	   faint paper grain, no outline, and a soft shadow only where the bottom edge lifts off the wall. */
 	.sticky {
 		position: relative;
-		padding: 26px 20px 18px;
+		padding: 28px 20px 18px;
 		font-family: var(--font-hand);
 		font-size: 1rem;
 		line-height: 1.75;
 		color: var(--ink);
-		background: var(--note-bg);
-		border: 1px solid var(--note-edge);
+		background-color: var(--note-bg);
+		background-image:
+			/* paper grain */
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+			/* adhesive strip on top, then the paper catching a little light towards the bottom */
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--note-bg) 90%, var(--ink) 10%) 0,
+				color-mix(in srgb, var(--note-bg) 94%, var(--ink) 6%) 13%,
+				var(--note-bg) 16%,
+				var(--note-bg) 70%,
+				color-mix(in srgb, var(--note-bg) 88%, #fff 12%) 100%
+			);
 		border-radius: var(--radius);
+		box-shadow:
+			0 1px 1px var(--note-shade-1),
+			0 14px 12px -10px var(--note-shade-2);
 		transform: rotate(var(--tilt));
+	}
+
+	.sticky {
+		--note-shade-1: rgba(44, 56, 35, 0.12);
+		--note-shade-2: rgba(44, 56, 35, 0.32);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.sticky {
+			--note-shade-1: rgba(0, 0, 0, 0.35);
+			--note-shade-2: rgba(0, 0, 0, 0.55);
+		}
 	}
 
 	.sticky--yellow {
@@ -67,49 +95,44 @@ const {
 		--note-edge: color-mix(in srgb, var(--note-bg) 76%, var(--ink) 24%);
 	}
 
-	/* Round coloured push pin */
+	/* Round push pin: a glossy head and a small shadow on the paper, as if lit from the top left */
 	.pin {
 		position: absolute;
 		z-index: 3;
 		top: 7px;
 		left: var(--pin-x);
-		width: 14px;
-		height: 14px;
-		margin-left: -7px;
+		width: 15px;
+		height: 15px;
+		margin-left: -7.5px;
 		border-radius: 50%;
-		background: var(--pin);
-		border: 1px solid color-mix(in srgb, var(--pin) 72%, #000 28%);
+		background: radial-gradient(
+			circle at 35% 30%,
+			color-mix(in srgb, var(--pin) 30%, #fff 70%) 0,
+			var(--pin) 38%,
+			color-mix(in srgb, var(--pin) 70%, #000 30%) 100%
+		);
+		box-shadow: 2px 3px 3px rgba(30, 36, 24, 0.35);
 		pointer-events: none;
 	}
 
-	/* little highlight so it reads as a round pin head */
-	.pin::after {
-		content: '';
-		position: absolute;
-		top: 2.5px;
-		left: 3px;
-		width: 4px;
-		height: 4px;
-		border-radius: 50%;
-		background: color-mix(in srgb, var(--pin) 35%, #fff 65%);
-	}
-
-	/* A soft, rounded dog-ear: wall colour where the paper lifted, the paper's back folding toward us. */
+	/* A lifted dog-ear: wall colour where the corner came away, the paper's back shaded towards the fold */
 	.sticky--curl::after {
 		content: '';
 		position: absolute;
 		z-index: 2;
-		right: -1px;
-		bottom: -1px;
-		width: 28px;
-		height: 28px;
+		right: 0;
+		bottom: 0;
+		width: 30px;
+		height: 30px;
 		background: linear-gradient(
 			315deg,
 			var(--bg) 50%,
-			color-mix(in srgb, var(--note-bg) 84%, var(--ink) 16%) 50%
+			color-mix(in srgb, var(--note-bg) 70%, var(--ink) 30%) 51%,
+			color-mix(in srgb, var(--note-bg) 92%, #fff 8%) 100%
 		);
 		border-top-left-radius: 10px;
 		border-bottom-right-radius: inherit;
+		box-shadow: -2px -2px 3px rgba(44, 56, 35, 0.12);
 		pointer-events: none;
 	}
 </style>

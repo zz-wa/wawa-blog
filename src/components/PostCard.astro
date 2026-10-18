@@ -1,8 +1,18 @@
 ---
-// 墙上的一张：碎碎念直接显示内容（太长就截断），读书显示书名和一两句感想。
-// 整张都能点，点进去是这一篇的完整页面。
+// 墙上的一张。整张都能点，点进去是这一篇的完整页面。
+// - 有 title 的长文：只显示标题和正文开头约 40 个字，不显示图片
+// - 短的：完整显示
+// - 读书：带“读书”标记，有书名就显示《书名》，末尾署作者
 import { render } from 'astro:content';
-import { formatDate, NOTE_SHORT_LIMIT, plainText, type Post, postHref, wallLook } from '../utils';
+import {
+	excerpt,
+	formatDate,
+	NOTE_SHORT_LIMIT,
+	plainText,
+	type Post,
+	postHref,
+	wallLook,
+} from '../utils';
 import StickyNote from './StickyNote.astro';
 import Whisper from './Whisper.astro';
 
@@ -13,28 +23,26 @@ interface Props {
 
 const { post, index } = Astro.props;
 const look = wallLook(post, index);
-const text = plainText(post);
 const href = postHref(post);
 const { Content } = await render(post);
+const { title, author, date } = post.data;
+const book = post.data.type === 'reading' ? post.data.book : undefined;
+const summary = post.data.type === 'reading' ? post.data.summary : undefined;
 
-const long = post.data.type === 'note' && text.length > NOTE_SHORT_LIMIT;
-const summary =
-	post.data.type === 'reading'
-		? (post.data.summary ?? (text.length > 60 ? `${text.slice(0, 60)}…` : text))
-		: '';
-const label =
-	post.data.type === 'reading'
-		? `读书：《${post.data.book}》`
-		: `碎碎念 ${formatDate(post.data.date)}`;
+// Untitled notes that run long still get clipped instead of filling the wall
+const clipped = !title && plainText(post).length > NOTE_SHORT_LIMIT;
+const label = title ?? (book ? `读书：《${book}》` : `${post.data.type === 'reading' ? '读书' : '碎碎念'} ${formatDate(date)}`);
 
 // Inline, because these land on StickyNote's root element where this file's scoped CSS can't reach
 const style = [
 	`width: ${look.width}px`,
 	'max-width: 100%',
+	// Real sticky notes are square; a long one still grows taller to fit its text
+	post.data.type === 'note' ? 'aspect-ratio: 1 / 0.94' : '',
 	`translate: ${look.dx}px ${look.dy}px`,
 	`margin-top: ${look.marginTop}px`,
 	`margin-left: ${look.marginLeft}px`,
-].join('; ');
+].filter(Boolean).join('; ');
 ---
 
 <StickyNote
@@ -50,32 +58,33 @@ const style = [
 >
 	{/* Covers the whole note so any spot opens the post; whisper dots sit above it */}
 	<a class="card-link" href={href} aria-label={label}></a>
+	{post.data.type === 'reading' && <span class="tag">读书</span>}
+	<time class="meta" datetime={date.toISOString()}>{formatDate(date)}</time>
+	{book && <h2 class="book">《{book}》</h2>}
 	{
-		post.data.type === 'reading' ? (
+		title ? (
 			<>
-				<span class="tag">读书</span>
-				<h2 class="book">《{post.data.book}》</h2>
-				<p class="summary">{summary}</p>
-				<span class="meta">
-					{post.data.author} · {formatDate(post.data.date)}
+				<h2 class="title">{title}</h2>
+				<p class="excerpt">{excerpt(post, 40)}</p>
+				{post.data.cover && <img class="cover" src={post.data.cover} alt="" loading="lazy" />}
+				<span class="more" aria-hidden="true">
+					读完 →
 				</span>
 			</>
+		) : summary ? (
+			<p class="excerpt">{summary}</p>
 		) : (
-			<>
-				<time class="meta" datetime={post.data.date.toISOString()}>
-					{formatDate(post.data.date)}
-				</time>
-				<div class:list={['body', { clipped: long }]}>
-					<Content components={{ Whisper }} />
-				</div>
-				{long && (
-					<span class="more" aria-hidden="true">
-						读完 →
-					</span>
-				)}
-			</>
+			<div class:list={['body', { clipped }]}>
+				<Content components={{ Whisper }} />
+			</div>
 		)
 	}
+	{clipped && (
+		<span class="more" aria-hidden="true">
+			读完 →
+		</span>
+	)}
+	{author && <p class="author">—— {author}</p>}
 </StickyNote>
 
 <style>
@@ -113,12 +122,18 @@ const style = [
 		margin-bottom: 4px;
 	}
 
+
 	.body :global(p) {
 		margin: 0 0 0.5em;
 	}
 
 	.body :global(p:last-child) {
 		margin-bottom: 0;
+	}
+
+	/* Pictures only show on the full post page, never on the wall */
+	.body :global(img) {
+		display: none;
 	}
 
 	.clipped {
@@ -135,33 +150,56 @@ const style = [
 		color: var(--link);
 	}
 
+	/* "读书" as two loose characters floating down the card's left edge, no box */
 	.tag {
 		position: absolute;
-		top: 9px;
-		left: 12px;
-		padding: 0 6px;
-		font-family: var(--font-ui);
-		font-size: 0.88rem;
-		font-weight: 700;
-		letter-spacing: 0.08em;
+		top: 14px;
+		left: -1.5em;
+		writing-mode: vertical-rl;
+		letter-spacing: 0.35em;
+		font-size: 0.95rem;
 		color: var(--link);
-		border: 1px solid color-mix(in srgb, var(--link) 45%, transparent);
-		border-radius: 3px;
+		rotate: -4deg;
+		pointer-events: none;
 	}
 
-	.book {
-		margin: 8px 0 6px;
-		font-family: var(--font-hand);
-		font-size: 1.15rem;
-		font-weight: 700;
+	.book,
+	.title {
+		margin: 2px 0 4px;
+		font-size: 1.25rem;
+		line-height: 1.4;
 	}
 
-	.summary {
-		margin: 0 0 8px;
+	.excerpt {
+		margin: 0;
+		color: var(--ink-soft);
+	}
+
+	/* The post's cover photo, as a small print tucked into the note */
+	.cover {
+		display: block;
+		width: 78%;
+		aspect-ratio: 4 / 3;
+		margin: 12px auto 4px;
+		object-fit: cover;
+		border-radius: 8px;
+		border: 1px solid var(--note-edge);
+		rotate: -2deg;
+	}
+
+	/* Hard line breaks (trailing \ in Markdown) come through as <br>; keep them tight on the wall */
+	.body :global(br) {
+		line-height: 1.6;
+	}
+
+	.author {
+		margin: 8px 0 0;
+		text-align: right;
 		color: var(--ink-soft);
 	}
 
 	:global(.card):hover .book,
+	:global(.card):hover .title,
 	:global(.card):hover .more {
 		color: var(--link);
 		text-decoration: underline;

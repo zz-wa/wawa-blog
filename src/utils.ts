@@ -7,16 +7,28 @@ export const PIN_COLORS = ['#d4a93f', '#e07a5f', '#6a9fd4', '#7dbe9a', '#b391d6'
 
 const NOTE_COLORS: NoteColor[] = ['yellow', 'peach', 'cream'];
 
+// Posts are written in China; show dates in Beijing time so 00:30 doesn't become "yesterday".
+const TIME_ZONE = 'Asia/Shanghai';
+
+function ymd(date: Date): { y: string; m: string; d: string } {
+	const parts = new Intl.DateTimeFormat('en-CA', {
+		timeZone: TIME_ZONE,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+	}).formatToParts(date);
+	const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+	return { y: get('year'), m: get('month'), d: get('day') };
+}
+
 /** 2026.10.18 */
 export function formatDate(date: Date): string {
-	const y = date.getUTCFullYear();
-	const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-	const d = String(date.getUTCDate()).padStart(2, '0');
+	const { y, m, d } = ymd(date);
 	return `${y}.${m}.${d}`;
 }
 
 export function seasonOf(date: Date): { name: string; flower: string } {
-	const m = date.getUTCMonth() + 1;
+	const m = Number(ymd(date).m);
 	if (m >= 3 && m <= 5) return { name: '春', flower: '🌱' };
 	if (m >= 6 && m <= 8) return { name: '夏', flower: '🍃' };
 	if (m >= 9 && m <= 11) return { name: '秋', flower: '🌼' };
@@ -25,13 +37,23 @@ export function seasonOf(date: Date): { name: string; flower: string } {
 
 export const byDateDesc = (a: Post, b: Post) => b.data.date.valueOf() - a.data.date.valueOf();
 
-/** Plain text of a post body, for length checks and excerpts. */
+/** Plain text of a post body, for length checks and excerpts. Images are dropped entirely. */
 export function plainText(post: Post): string {
 	return (post.body ?? '')
-		.replace(/<[^>]+>/g, '')
-		.replace(/[#>*_`[\]()-]/g, '')
+		.replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images
+		.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → their text
+		.replace(/<[^>]+>/g, '') // MDX / HTML tags
+		.replace(/\\$/gm, '') // hard line-break backslashes
+		.replace(/^\s*>\s?/gm, '') // blockquote markers
+		.replace(/[#*_`]/g, '')
 		.replace(/\s+/g, ' ')
 		.trim();
+}
+
+/** First ~n characters of the body, with an ellipsis if cut. */
+export function excerpt(post: Post, n = 40): string {
+	const chars = [...plainText(post)];
+	return chars.length > n ? `${chars.slice(0, n).join('')}…` : chars.join('');
 }
 
 /** Notes longer than this are clipped on the wall and get a "读完" link. */
@@ -81,11 +103,13 @@ export function wallLook(post: Post, index: number): WallLook {
 	const r = (salt: string) => rand(`${post.id}:${salt}`);
 	const isReading = post.data.type === 'reading';
 
-	const widths = isReading ? [300, 330, 360] : [190, 230, 270];
+	const widths = isReading ? [320, 350, 390] : [210, 250, 300];
 	const width = widths[Math.floor(r('w') * widths.length)];
 
-	let tilt = (r('t') * 2 - 1) * 6;
-	if (Math.abs(tilt) < 1.2) tilt = tilt < 0 ? -1.2 - Math.abs(tilt) : 1.2 + tilt;
+	// How far it leans is random (1.5°–6°); which way alternates along the wall,
+	// so neighbouring notes never all lean the same direction.
+	const lean = 1.5 + r('t') * 4.5;
+	const tilt = index % 2 === 0 ? -lean : lean;
 
 	const color: NoteColor = isReading
 		? 'cream'

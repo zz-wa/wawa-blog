@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import MarginQuote from '../components/MarginQuote.astro';
 import Petals from '../components/Petals.astro';
 import PostCard from '../components/PostCard.astro';
 import SiteTitle from '../components/SiteTitle.astro';
@@ -9,6 +10,10 @@ import Base from '../layouts/Base.astro';
 import { byDateDesc, seasonOf } from '../utils';
 
 const posts = (await getCollection('posts')).sort(byDateDesc);
+// Untitled reading quotes float as bare words left of the wall; everything else is a note on it
+const isQuote = (p: (typeof posts)[number]) => p.data.type === 'reading' && !p.data.title;
+const quotes = posts.filter(isQuote);
+const notes = posts.filter((p) => !isQuote(p));
 const season = seasonOf(new Date());
 ---
 
@@ -37,11 +42,20 @@ const season = seasonOf(new Date());
 
 	<main class="wall-wrap">
 		{
-			posts.length === 0 ? (
+			quotes.length > 0 && (
+				<aside class="margin-quotes" aria-label="读书摘抄">
+					{quotes.map((post, i) => (
+						<MarginQuote post={post} index={i} />
+					))}
+				</aside>
+			)
+		}
+		{
+			notes.length === 0 && quotes.length === 0 ? (
 				<p class="empty">test</p>
 			) : (
 				<div class="wall">
-					{posts.map((post, i) => (
+					{notes.map((post, i) => (
 						<PostCard post={post} index={i} />
 					))}
 				</div>
@@ -61,9 +75,9 @@ const season = seasonOf(new Date());
 		align-items: center;
 		justify-content: space-between;
 		gap: 32px 48px;
-		max-width: var(--page-width);
+		max-width: var(--home-width);
 		margin: 0 auto;
-		padding: 64px 16px 32px;
+		padding: 64px 24px 32px;
 	}
 
 	h1 {
@@ -127,8 +141,48 @@ const season = seasonOf(new Date());
 		font-weight: 700;
 	}
 
+	/* The home page uses (almost) the whole screen; article pages stay narrow for reading */
+	.hero,
 	.wall-wrap {
-		padding-top: 24px;
+		--home-width: min(1400px, 100%);
+	}
+
+	.wall-wrap {
+		max-width: var(--home-width);
+		padding: 24px 24px 96px;
+	}
+
+	/* Bare quotes: above the wall on narrow screens, out in the left margin on wide ones */
+	.margin-quotes {
+		display: flex;
+		flex-direction: column;
+		gap: 28px;
+		max-width: 30em;
+		margin: 8px 0 28px 18px;
+	}
+
+	/* Wide screens: quotes are a column of upright words down the far right, the wall fills the rest */
+	@media (min-width: 1100px) {
+		.wall-wrap {
+			display: flex;
+			align-items: flex-start;
+			gap: 40px;
+		}
+
+		.margin-quotes {
+			/* to the right of the wall */
+			order: 2;
+			flex: none;
+			flex-direction: row-reverse;
+			gap: 40px;
+			max-width: none;
+			margin: 40px 0 0;
+		}
+
+		.wall {
+			flex: 1;
+			min-width: 0;
+		}
 	}
 
 	/* Not a grid: cards keep their own widths and offsets so the wall looks hand-stuck */
@@ -136,7 +190,9 @@ const season = seasonOf(new Date());
 		display: flex;
 		flex-wrap: wrap;
 		align-items: flex-start;
-		gap: 22px 30px;
+		/* spread the notes over the whole width instead of piling up on the left */
+		justify-content: space-around;
+		gap: 28px 40px;
 		padding: 16px 12px 0 18px;
 	}
 

@@ -1,8 +1,9 @@
 ---
-// 长的碎碎念在墙上只露一部分，点“读完”来到这里。
+// 碎碎念的单独页面：有标题的长文用完整文章页，短的就是一张放大的便利贴。
 import { getCollection, render } from 'astro:content';
 import StickyNote from '../../components/StickyNote.astro';
 import Whisper from '../../components/Whisper.astro';
+import Article from '../../layouts/Article.astro';
 import Base from '../../layouts/Base.astro';
 import { byDateDesc, formatDate, type Post, wallLook } from '../../utils';
 
@@ -22,6 +23,7 @@ const { Content } = await render(post);
 const date = formatDate(post.data.date);
 ---
 
+{post.data.title ? <Article post={post} /> : (
 <Base title={`碎碎念 ${date}`}>
 	<main>
 		<StickyNote
@@ -41,6 +43,7 @@ const date = formatDate(post.data.date);
 		<a class="back" href="/">← 回到墙上</a>
 	</main>
 </Base>
+)}
 
 <style>
 	main :global(.single) {

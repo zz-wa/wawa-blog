@@ -1,9 +1,8 @@
 ---
-// 读书页：书名做标题。最安静的地方，不放贴纸和动画。
-import { getCollection, render } from 'astro:content';
-import Whisper from '../../components/Whisper.astro';
-import Base from '../../layouts/Base.astro';
-import { formatDate, type Post } from '../../utils';
+// 读书页：最安静的地方，不放贴纸和动画。
+import { getCollection } from 'astro:content';
+import Article from '../../layouts/Article.astro';
+import type { Post } from '../../utils';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('posts');
@@ -15,54 +14,6 @@ export async function getStaticPaths() {
 type Props = { post: Post };
 
 const { post } = Astro.props;
-if (post.data.type !== 'reading') throw new Error(`${post.id} is not a reading post`);
-const { book, author, date, summary } = post.data;
-const { Content } = await render(post);
 ---
 
-<Base title={`《${book}》`} description={summary ?? `读《${book}》`}>
-	<main>
-		<article>
-			<header class="head">
-				<h1>《{book}》</h1>
-				<p class="meta">
-					{author} · <time datetime={date.toISOString()}>{formatDate(date)}</time>
-				</p>
-			</header>
-
-			<div class="prose">
-				<Content components={{ Whisper }} />
-			</div>
-		</article>
-
-		<a class="back" href="/">← 回到墙上</a>
-	</main>
-</Base>
-
-<style>
-	.head {
-		max-width: var(--measure);
-		margin: 24px 0 44px;
-		padding-bottom: 24px;
-		border-bottom: 1px solid var(--bg-edge);
-	}
-
-	h1 {
-		margin-bottom: 0.3em;
-		font-size: clamp(1.7rem, 4vw, 2.2rem);
-	}
-
-	.meta {
-		margin: 0;
-		font-family: var(--font-ui);
-		font-size: 0.85rem;
-		color: var(--ink-faint);
-	}
-
-	.back {
-		display: inline-block;
-		margin-top: 48px;
-		font-family: var(--font-ui);
-		font-size: 0.9rem;
-	}
-</style>
+<Article post={post} />

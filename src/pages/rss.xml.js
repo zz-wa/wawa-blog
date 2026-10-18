@@ -12,9 +12,12 @@ export async function GET(context) {
 		site: context.site,
 		items: posts.map((post) => ({
 			title:
-				post.data.type === 'reading'
-					? `读《${post.data.book}》`
-					: `碎碎念 ${formatDate(post.data.date)}`,
+				post.data.title ??
+				(post.data.type === 'reading'
+					? post.data.book
+						? `读《${post.data.book}》`
+						: `读书 ${formatDate(post.data.date)}`
+					: `碎碎念 ${formatDate(post.data.date)}`),
 			description:
 				post.data.type === 'reading' && post.data.summary
 					? post.data.summary
