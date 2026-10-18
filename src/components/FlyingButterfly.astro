@@ -1,0 +1,128 @@
+---
+// 首页的彩色蝴蝶：慢慢地在页面上飞来飞去，扇着翅膀，偶尔停下来歇一会儿。
+// 系统开启“减少动态效果”时不飞，就停在墙的右上角。
+// 插画来源：DayDay爱画画（已获授权使用）
+---
+
+<span class="flyer" aria-hidden="true">
+	<img src="/images/deco/butterfly-blue-pink.png" alt="" />
+</span>
+
+<style>
+	/* Resting spot (and the no-motion fallback): top-right of the wall */
+	.flyer {
+		position: absolute;
+		top: -40px;
+		right: 3%;
+		z-index: 6;
+		width: 104px;
+		rotate: -8deg;
+		pointer-events: none;
+		user-select: none;
+	}
+
+	.flyer img {
+		display: block;
+		width: 100%;
+		height: auto;
+		transform-origin: 55% 50%;
+	}
+
+	/* Once the script takes over it flies over the whole page */
+	.flyer.flying {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: auto;
+		rotate: none;
+		will-change: transform;
+	}
+
+	.flyer.flying img {
+		animation: flap 0.42s ease-in-out infinite alternate;
+	}
+
+	/* Resting: wings open and close slowly */
+	.flyer.flying.resting img {
+		animation-duration: 1.6s;
+	}
+
+	@keyframes flap {
+		from {
+			transform: scaleX(1);
+		}
+		to {
+			transform: scaleX(0.72);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.flyer.flying img {
+			animation: none;
+		}
+	}
+</style>
+
+<script>
+	const flyer = document.querySelector<HTMLElement>('.flyer');
+	const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	if (flyer && !reduced) {
+		const start = flyer.getBoundingClientRect();
+		let x = start.left;
+		let y = Math.max(16, start.top);
+		let tx = x;
+		let ty = y;
+		let rest = 0;
+		let lean = 0;
+		let t = 0;
+		let last = performance.now();
+
+		const size = () => flyer.offsetWidth || 104;
+		const pickTarget = () => {
+			const m = 24;
+			tx = m + Math.random() * Math.max(0, window.innerWidth - size() - 2 * m);
+			ty = m + Math.random() * Math.max(0, window.innerHeight * 0.85 - size() - m);
+		};
+
+		flyer.classList.add('flying');
+		pickTarget();
+
+		const step = (now: number) => {
+			const dt = Math.min(0.05, (now - last) / 1000);
+			last = now;
+			t += dt;
+
+			if (document.hidden) {
+				requestAnimationFrame(step);
+				return;
+			}
+
+			if (rest > 0) {
+				rest -= dt;
+				flyer.classList.add('resting');
+			} else {
+				flyer.classList.remove('resting');
+				const dx = tx - x;
+				const dy = ty - y;
+				const d = Math.hypot(dx, dy);
+				if (d < 6) {
+					// sometimes settle for a few seconds before setting off again
+					if (Math.random() < 0.45) rest = 2 + Math.random() * 3;
+					pickTarget();
+				} else {
+					const speed = 60; // px per second: slow and drifting
+					x += (dx / d) * speed * dt + Math.sin(t * 2.3) * 0.7;
+					y += (dy / d) * speed * dt + Math.cos(t * 3.1) * 0.9;
+					// lean gently into the direction of travel
+					lean += ((dx / d) * 14 - lean) * Math.min(1, dt * 3);
+				}
+			}
+
+			flyer.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${lean.toFixed(1)}deg)`;
+			requestAnimationFrame(step);
+		};
+
+		requestAnimationFrame(step);
+	}
+</script>

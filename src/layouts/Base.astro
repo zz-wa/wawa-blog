@@ -28,6 +28,13 @@ const { title, description = SITE_DESCRIPTION, home = false } = Astro.props;
 				</header>
 			)
 		}
+		{
+			!home && (
+				// the colourful butterfly from the home page, landed in the top-right corner
+				// (illustration: DayDay爱画画, used with permission)
+				<img class="corner-butterfly" src="/images/deco/butterfly-blue-pink.png" alt="" aria-hidden="true" />
+			)
+		}
 		<slot />
 	</body>
 </html>
@@ -41,5 +48,16 @@ const { title, description = SITE_DESCRIPTION, home = false } = Astro.props;
 
 	.site-header a {
 		display: inline-block;
+	}
+
+	.corner-butterfly {
+		position: absolute;
+		top: 14px;
+		right: clamp(12px, 4vw, 56px);
+		width: clamp(56px, 7vw, 92px);
+		height: auto;
+		rotate: -12deg;
+		pointer-events: none;
+		user-select: none;
 	}
 </style>

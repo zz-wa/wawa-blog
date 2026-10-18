@@ -1,0 +1,58 @@
+---
+// 撒在页面上的彩色小星星，配色来自彩色蝴蝶插画。纯装饰，固定位置，不动。
+interface Props {
+	/** [left %, top %, size px, colour, kind] */
+	stars: [number, number, number, 'yellow' | 'mint' | 'lilac' | 'blue' | 'pink', 'star' | 'dot' | 'ring'][];
+}
+
+const { stars } = Astro.props;
+---
+
+<div class="sparkles" aria-hidden="true">
+	{
+		stars.map(([left, top, size, color, kind]) => (
+			<span
+				class={`spark ${kind}`}
+				style={`left:${left}%;top:${top}%;width:${size}px;height:${size}px;--c:var(--spark-${color})`}
+			>
+				{kind === 'star' && (
+					<svg viewBox="-10 -10 20 20">
+						<path d="M0 -10 Q1.4 -1.4 10 0 Q1.4 1.4 0 10 Q-1.4 1.4 -10 0 Q-1.4 -1.4 0 -10 Z" />
+					</svg>
+				)}
+			</span>
+		))
+	}
+</div>
+
+<style>
+	.sparkles {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		pointer-events: none;
+		overflow: hidden;
+	}
+
+	.spark {
+		position: absolute;
+		display: block;
+	}
+
+	.spark svg {
+		display: block;
+		width: 100%;
+		height: 100%;
+		fill: var(--c);
+	}
+
+	.spark.dot {
+		border-radius: 50%;
+		background: var(--c);
+	}
+
+	.spark.ring {
+		border-radius: 50%;
+		border: 2px solid var(--c);
+	}
+</style>

@@ -19,6 +19,15 @@
 	--note-yellow: #f6e4a6;
 	--note-peach: #f6dfcf;
 	--note-cream: #fbf7ec;
+	/* butterfly palette: soft sky, blossom pink, mint (from the crayon butterfly) */
+	--note-blue: #dfeafb;
+	--note-pink: #fbe0e8;
+	--note-mint: #d9f3ec;
+	--spark-yellow: #f4d36b;
+	--spark-mint: #9fd8b4;
+	--spark-lilac: #a9a6e8;
+	--spark-blue: #8fb3e6;
+	--spark-pink: #f2b6c9;
 
 	/* Everything uses the same hand-written face as the title */
 	--font-hand: 'PingFang SaTuo', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive;
@@ -42,6 +51,14 @@
 		--note-yellow: #4a4224;
 		--note-peach: #4a3a2e;
 		--note-cream: #34392e;
+		--note-blue: #2b3546;
+		--note-pink: #43303a;
+		--note-mint: #26403a;
+		--spark-yellow: #c9ad55;
+		--spark-mint: #6fae8a;
+		--spark-lilac: #8885c4;
+		--spark-blue: #6f91c4;
+		--spark-pink: #c98ea1;
 
 		color-scheme: dark;
 	}

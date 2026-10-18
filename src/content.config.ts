@@ -22,8 +22,8 @@ const posts = defineCollection({
 		z.object({
 			type: z.literal('note'),
 			...common,
-			// 不写就按顺序在三种颜色里轮换
-			color: z.enum(['yellow', 'peach', 'cream']).optional(),
+			// 不写就按顺序在六种颜色里轮换
+			color: z.enum(['yellow', 'peach', 'cream', 'blue', 'pink', 'mint']).optional(),
 		}),
 		z.object({
 			type: z.literal('reading'),

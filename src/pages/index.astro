@@ -1,9 +1,11 @@
 ---
 import { getCollection } from 'astro:content';
+import FlyingButterfly from '../components/FlyingButterfly.astro';
 import MarginQuote from '../components/MarginQuote.astro';
 import Petals from '../components/Petals.astro';
 import PostCard from '../components/PostCard.astro';
 import SiteTitle from '../components/SiteTitle.astro';
+import Sparkles from '../components/Sparkles.astro';
 import StickyNote from '../components/StickyNote.astro';
 import { GREETING, INTRO, NOW } from '../consts';
 import Base from '../layouts/Base.astro';
@@ -20,9 +22,21 @@ const season = seasonOf(new Date());
 <Base home>
 	<div class="hero">
 		<Petals />
+		<Sparkles
+			stars={[
+				[44, 22, 16, 'yellow', 'star'],
+				[52, 60, 10, 'mint', 'star'],
+				[58, 30, 12, 'lilac', 'ring'],
+				[70, 70, 8, 'pink', 'dot'],
+				[8, 82, 12, 'blue', 'star'],
+			]}
+		/>
 		<header class="hero-inner">
 			<div class="greeting">
-				<h1><SiteTitle /></h1>
+				<h1 class="title-wrap">
+					<SiteTitle />
+					<img class="bf bf-title" src="/images/deco/butterfly-line.png" alt="" />
+				</h1>
 				<p class="hello">{GREETING}</p>
 				<p class="intro">{INTRO}</p>
 			</div>
@@ -32,6 +46,7 @@ const season = seasonOf(new Date());
 					<p class="now-label">{NOW.label}</p>
 					<p class="now-text">{NOW.text}</p>
 				</StickyNote>
+				<img class="bf bf-navy" src="/images/deco/butterfly-navy.png" alt="" />
 				<span class="season" title={`现在是${season.name}天`}>
 					<span aria-hidden="true">{season.flower}</span>
 					<span class="season-name">{season.name}</span>
@@ -41,6 +56,20 @@ const season = seasonOf(new Date());
 	</div>
 
 	<main class="wall-wrap">
+		<Sparkles
+			stars={[
+				[2, 4, 18, 'yellow', 'star'],
+				[30, 1, 10, 'mint', 'star'],
+				[47, 62, 14, 'lilac', 'star'],
+				[63, 3, 8, 'pink', 'dot'],
+				[88, 70, 16, 'blue', 'star'],
+				[12, 88, 12, 'mint', 'ring'],
+				[74, 40, 9, 'yellow', 'dot'],
+				[96, 30, 12, 'pink', 'star'],
+			]}
+		/>
+		<FlyingButterfly />
+		<img class="bf bf-corner" src="/images/deco/butterfly-blue-mint.png" alt="" />
 		{
 			quotes.length > 0 && (
 				<aside class="margin-quotes" aria-label="读书摘抄">
@@ -147,7 +176,54 @@ const season = seasonOf(new Date());
 		--home-width: min(1400px, 100%);
 	}
 
+	/* Hand-drawn butterflies: one resting on the title, one over the wall's top-right corner */
+	.title-wrap {
+		position: relative;
+		display: inline-block;
+	}
+
+	/* Butterflies (illustration: DayDay爱画画, used with permission) — decoration only */
+	.bf {
+		position: absolute;
+		height: auto;
+		pointer-events: none;
+		user-select: none;
+	}
+
+	.bf-title {
+		top: -30px;
+		right: -86px;
+		width: 80px;
+		rotate: 10deg;
+	}
+
+
+	.bf-navy {
+		top: -34px;
+		left: -58px;
+		width: 66px;
+		rotate: -14deg;
+		z-index: 4;
+	}
+
+	.bf-corner {
+		bottom: 24px;
+		left: -6px;
+		width: 76px;
+		rotate: 14deg;
+		z-index: 4;
+	}
+
+	/* the line drawing is dark ink: lighten it on the dark moss background */
+	@media (prefers-color-scheme: dark) {
+		.bf-title {
+			filter: invert(0.9) sepia(0.2);
+		}
+	}
+
+
 	.wall-wrap {
+		position: relative;
 		max-width: var(--home-width);
 		padding: 24px 24px 96px;
 	}

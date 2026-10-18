@@ -1,0 +1,100 @@
+---
+// 文章页里点图片看大图。点图片外面、点关闭或按 Esc 收起。
+---
+
+<dialog class="viewer" aria-label="查看大图">
+	<form method="dialog" class="close-form">
+		<button class="close" aria-label="关闭">×</button>
+	</form>
+	<img alt="" />
+	<p class="caption"></p>
+</dialog>
+
+<style>
+	.viewer {
+		max-width: min(92vw, 900px);
+		max-height: 92vh;
+		padding: 0;
+		border: none;
+		border-radius: 16px;
+		background: var(--bg);
+		color: var(--ink);
+		overflow: visible;
+	}
+
+	.viewer::backdrop {
+		background: color-mix(in srgb, var(--ink) 60%, transparent);
+	}
+
+	.viewer img {
+		display: block;
+		max-width: min(92vw, 900px);
+		max-height: calc(92vh - 3.5em);
+		width: auto;
+		height: auto;
+		border-radius: 16px 16px 0 0;
+		cursor: zoom-out;
+	}
+
+	.caption {
+		margin: 0;
+		padding: 0.6em 1em 0.8em;
+		font-size: 0.95rem;
+		text-align: center;
+		color: var(--ink-soft);
+	}
+
+	.caption:empty {
+		display: none;
+	}
+
+	.close-form {
+		position: absolute;
+		top: -14px;
+		right: -14px;
+		margin: 0;
+	}
+
+	.close {
+		width: 34px;
+		height: 34px;
+		font-size: 1.3rem;
+		line-height: 1;
+		color: var(--ink);
+		background: var(--note-cream);
+		border: 1px solid var(--bg-edge);
+		border-radius: 50%;
+		cursor: pointer;
+	}
+</style>
+
+<script>
+	const viewer = document.querySelector<HTMLDialogElement>('dialog.viewer');
+	const big = viewer?.querySelector('img');
+	const caption = viewer?.querySelector('.caption');
+
+	if (viewer && big && caption) {
+		document.querySelectorAll<HTMLImageElement>('.prose img').forEach((img) => {
+			img.tabIndex = 0;
+			img.setAttribute('role', 'button');
+			const open = () => {
+				big.src = img.currentSrc || img.src;
+				big.alt = img.alt;
+				caption.textContent = img.alt;
+				viewer.showModal();
+			};
+			img.addEventListener('click', open);
+			img.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					open();
+				}
+			});
+		});
+
+		// Clicking the picture itself or the dimmed backdrop closes it
+		viewer.addEventListener('click', (e) => {
+			if (e.target === viewer || e.target === big) viewer.close();
+		});
+	}
+</script>

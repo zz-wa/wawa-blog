@@ -1,11 +1,12 @@
 import type { CollectionEntry } from 'astro:content';
 
 export type Post = CollectionEntry<'posts'>;
-export type NoteColor = 'yellow' | 'peach' | 'cream';
+export type NoteColor = 'yellow' | 'peach' | 'cream' | 'blue' | 'pink' | 'mint';
 // Round push-pin colours, mixed across the wall (see DESIGN.md)
 export const PIN_COLORS = ['#d4a93f', '#e07a5f', '#6a9fd4', '#7dbe9a', '#b391d6', '#e89ab5'];
 
-const NOTE_COLORS: NoteColor[] = ['yellow', 'peach', 'cream'];
+// Mixed so neighbours differ: warm, cool, warm, cool…
+const NOTE_COLORS: NoteColor[] = ['yellow', 'blue', 'peach', 'mint', 'pink', 'cream'];
 
 // Posts are written in China; show dates in Beijing time so 00:30 doesn't become "yesterday".
 const TIME_ZONE = 'Asia/Shanghai';

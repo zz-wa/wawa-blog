@@ -1,0 +1,144 @@
+---
+// 完整文章页：有标题的长碎碎念和读书都用这个。安静的书页，不放贴纸和动画。
+import { render } from 'astro:content';
+import ImageViewer from '../components/ImageViewer.astro';
+import Whisper from '../components/Whisper.astro';
+import { excerpt, formatDate, type Post } from '../utils';
+import Base from './Base.astro';
+
+interface Props {
+	post: Post;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, author, date } = post.data;
+const book = post.data.type === 'reading' ? post.data.book : undefined;
+const heading = title ?? (book ? `《${book}》` : undefined);
+const pageTitle = heading ?? (post.data.type === 'reading' ? '读书' : '碎碎念');
+---
+
+<Base title={pageTitle} description={excerpt(post, 60)}>
+	<main>
+		<article>
+			<header class="head">
+				{post.data.type === 'reading' && <p class="label">读书</p>}
+				{heading && <h1>{heading}</h1>}
+				{title && book && <p class="book">《{book}》</p>}
+				<p class="meta">
+					{author && <span>{author} · </span>}
+					<time datetime={date.toISOString()}>{formatDate(date)}</time>
+				</p>
+			</header>
+
+			<div class="prose">
+				{
+					post.data.cover && (
+						<p class="float-img" style="--tilt: -2.6deg; --drop: 0px; --shift: 24px">
+							<img src={post.data.cover} alt="" />
+						</p>
+					)
+				}
+				<Content components={{ Whisper }} />
+			</div>
+		</article>
+
+		<a class="back" href="/">← 回到墙上</a>
+	</main>
+	<ImageViewer />
+</Base>
+
+<style>
+	.head {
+		max-width: var(--measure);
+		margin: 24px 0 40px;
+		padding-bottom: 22px;
+		border-bottom: 1px solid var(--bg-edge);
+	}
+
+	h1 {
+		margin-bottom: 0.3em;
+		font-size: clamp(1.8rem, 4.5vw, 2.4rem);
+		font-weight: 400;
+	}
+
+	.book {
+		margin: 0 0 0.3em;
+		color: var(--ink-soft);
+	}
+
+	.meta {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--ink-faint);
+	}
+
+	/* Pictures belong to a paragraph (see src/plugins/float-images.mjs).
+	   Wide screens: they drift out into the empty space right of the text, tilted and staggered,
+	   so the text keeps its full width. Narrower screens: they float inside the text. */
+	.prose :global(.float-img) {
+		float: right;
+		clear: right;
+		width: 30%;
+		margin: 0.35em 0 1em 1.6em;
+		rotate: var(--tilt, 0deg);
+	}
+
+	@media (min-width: 1280px) {
+		.prose :global(.float-img) {
+			width: 210px;
+			/* push the whole picture past the text column into the right-hand margin,
+			   each one a little further out than the last so they don't line up */
+			margin: calc(var(--drop, 0px) + 0.2em) calc(-260px - var(--shift, 0px)) 2.2em 0;
+		}
+	}
+
+	.prose :global(img) {
+		display: block;
+		width: 100%;
+		height: auto;
+		border-radius: 14px;
+		cursor: zoom-in;
+	}
+
+	/* On the page a picture is a small card, cropped to its top part.
+	   Clicking opens the whole picture, uncropped, in the viewer. */
+	.prose :global(.float-img img) {
+		aspect-ratio: 3 / 4;
+		object-fit: cover;
+		object-position: top;
+	}
+
+	.prose :global(img:focus-visible) {
+		outline: 2px solid var(--link);
+		outline-offset: 4px;
+	}
+
+	/* Headings and the end of the article start below any floating picture */
+	.prose :global(h2),
+	.prose :global(h3),
+	.prose :global(hr) {
+		clear: both;
+	}
+
+	.prose::after {
+		content: '';
+		display: block;
+		clear: both;
+	}
+
+	/* Phones are too narrow to wrap text around a picture: centre it instead */
+	@media (max-width: 600px) {
+		.prose :global(.float-img) {
+			float: none;
+			width: 56%;
+			margin: 1.4em auto;
+		}
+	}
+
+	.back {
+		display: inline-block;
+		margin-top: 48px;
+		font-size: 0.9rem;
+	}
+</style>

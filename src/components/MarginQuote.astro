@@ -1,0 +1,72 @@
+---
+// 没有标题的读书摘抄：不放进便利贴，只是字本身，飘在墙的最右边。
+// 宽屏上竖着写在墙右侧；窄屏上横着放在墙的最上面。点它进入读书页。
+import { plainText, type Post, postHref } from '../utils';
+
+interface Props {
+	post: Post;
+	index: number;
+}
+
+const { post, index } = Astro.props;
+const text = plainText(post);
+const { author } = post.data;
+// Alternate a slight lean so several quotes don't stand in a rigid row
+const tilt = index % 2 === 0 ? -2.5 : 1.8;
+---
+
+<a class="quote" href={postHref(post)} style={`--tilt: ${tilt}deg`}>
+	<span class="words">{text}</span>
+	{author && <span class="author">—— {author}</span>}
+</a>
+
+<style>
+	.quote {
+		display: block;
+		color: var(--ink-soft);
+		text-decoration: none;
+		rotate: var(--tilt);
+	}
+
+	.words {
+		font-size: 1.8rem;
+		line-height: 1.7;
+	}
+
+	.author {
+		display: block;
+		margin-top: 0.4em;
+		font-size: 1.15rem;
+		color: var(--ink-faint);
+		text-align: right;
+	}
+
+	.quote:hover .words {
+		color: var(--link);
+	}
+
+	/* Wide screens: written top-to-bottom beside the wall, the signature as its own column
+	   just to the right of the quote, sitting lower like a 落款 */
+	@media (min-width: 1100px) {
+		.quote {
+			display: flex;
+			align-items: flex-end;
+			gap: 0.5em;
+		}
+
+		.words,
+		.author {
+			writing-mode: vertical-rl;
+			letter-spacing: 0.14em;
+		}
+
+		.words {
+			max-height: 78vh;
+		}
+
+		.author {
+			margin: 0;
+			padding-bottom: 0.2em;
+		}
+	}
+</style>
