@@ -38,7 +38,7 @@ const cfg = ropeData as unknown as RopeConfig;
 // 没有标题、不超过这个字数的碎碎念，完整显示；再长的像有标题的一样，显示开头约 40 个字
 const SHORT_NOTE = 60;
 const KINDS = ['yellow', 'peach', 'cream'] as const;
-const WIDTHS = [124, 136, 148];
+const WIDTHS = [136, 150, 164];
 // 球钉压在便利贴上沿：便利贴的上沿在球钉中心下面 5 个单位（和编辑页一致）
 const HANG = 12; // 球钉换成了小蝴蝶（高约 30），文字要放低一点，不压住蝴蝶
 
@@ -46,7 +46,7 @@ const shown = posts.slice(0, cfg.beads.length);
 
 // ---- 手机用的竖直绳子 ----
 const TALL_W = 320;
-const TALL_STEP = 170; // 相邻两张便利贴之间的竖直间距：比一张便利贴还高，日期才不会压在上一张上
+const TALL_STEP = 235; // 相邻两张便利贴之间的竖直间距：比一张便利贴还高，日期才不会压在上一张上
 const TALL_TOP = 100;
 const tallH = TALL_TOP + shown.length * TALL_STEP + 20;
 // “—— 结绳记事”写在绳子开头的上面（画布坐标）
@@ -132,8 +132,8 @@ const butterflies = await Promise.all(
 			return { src: img.src, w: meta.width * scale, h: meta.height * scale };
 		}),
 );
-// 绳子画得很细（不跟 rope.json 的 thickness 走）
-const ROPE_W = 1;
+// 绳子的粗细、麻花纹都跟着 rope.json（用 /admin/rope.html 拖出来、导出的）走
+const ROPE_W = cfg.thickness;
 ---
 
 {
@@ -145,7 +145,7 @@ const ROPE_W = 1;
 			<div class="lead" aria-hidden="true" style={`left:${pct((v.lead.x / v.W) * 100)}%; top:${pct((v.lead.y / v.H) * 100)}%`}><span class="perch" data-perch /></div>
 			<svg class="layer" viewBox={`0 0 ${v.W} ${v.H}`} aria-hidden="true" focusable="false">
 				<path class="line" d={v.d} fill="none" stroke-width={ROPE_W} stroke-linecap="round" stroke-linejoin="round" />
-				{false && (
+				{cfg.twist && (
 					<path
 						class="twist"
 						d={v.d}
@@ -166,7 +166,7 @@ const ROPE_W = 1;
 						class="slot"
 						style={`left:${it.left}%; top:${it.top}%; width:${it.width}%; --rot:${it.rot}deg; --ox:${it.originX}%`}
 					>
-						<a class={`note k-${it.kind}`} href={it.href}>
+						<a class={`note k-${it.kind}${it.picture ? ' has-pic' : ''}`} href={it.href}>
 							<time class="sr-only" datetime={isoDate(it.date)}>
 								{formatDate(it.date)}
 							</time>
@@ -362,7 +362,7 @@ const ROPE_W = 1;
 		outline-offset: 3px;
 	}
 
-	/* 文章带的照片：宽屏在文字的右边，小小的一张；手机上没有地方放在旁边，放在文字下面 */
+	/* 文章带的照片：小小的一张，放在文字下面（放在旁边会和相邻那条文字撞在一起） */
 	.thumb {
 		display: block;
 		object-fit: cover;
@@ -370,25 +370,22 @@ const ROPE_W = 1;
 		box-shadow: 0 1px 5px rgb(0 0 0 / 0.2);
 	}
 
-	.rope--wide .thumb {
-		position: absolute;
-		left: 100%;
-		top: calc(var(--u) * 6);
-		width: calc(var(--u) * 44);
-		height: calc(var(--u) * 44);
-		rotate: 3deg;
+	.thumb {
+		width: calc(var(--u) * 48);
+		height: calc(var(--u) * 48);
+		margin-top: calc(var(--u) * 8);
 	}
 
-	.rope--tall .thumb {
-		width: calc(var(--u) * 64);
-		height: calc(var(--u) * 64);
-		margin-top: calc(var(--u) * 8);
+	/* 宽屏：带照片的那条文字只留 2 行，照片放在下面，才不会压到下一排的日期 */
+	.rope--wide .has-pic .ne {
+		-webkit-line-clamp: 2;
 	}
 
 	.nt {
 		margin: 0 0 calc(var(--u) * 7);
-		font-size: calc(var(--u) * 15);
-		line-height: calc(var(--u) * 19);
+		/* 字不跟着画布缩到太小：手机上也不小于 1.15rem */
+		font-size: max(calc(var(--u) * 17), 1.15rem);
+		line-height: 1.35;
 		font-weight: 400;
 		color: var(--ink);
 		display: -webkit-box;
@@ -399,19 +396,19 @@ const ROPE_W = 1;
 
 	.ne {
 		margin: 0;
-		font-size: calc(var(--u) * 12.5);
-		line-height: calc(var(--u) * 16);
+		font-size: max(calc(var(--u) * 14.5), 1rem);
+		line-height: 1.55;
 		color: var(--ink-soft, var(--ink));
 		display: -webkit-box;
 		-webkit-box-orient: vertical;
-		-webkit-line-clamp: 5;
+		-webkit-line-clamp: 4;
 		overflow: hidden;
 	}
 
 	.na {
 		margin: calc(var(--u) * 5) 0 0;
-		font-size: calc(var(--u) * 12);
-		line-height: calc(var(--u) * 15);
+		font-size: max(calc(var(--u) * 13.5), 0.95rem);
+		line-height: 1.5;
 		text-align: right;
 		color: var(--ink-faint);
 	}

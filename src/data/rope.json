@@ -62,9 +62,9 @@
   ],
   "wobble": 6,
   "seed": 7,
-  "thickness": 2.4,
+  "thickness": 1,
   "ropeColor": "#2A2420",
-  "twist": true,
+  "twist": false,
   "beadSize": 7.2,
   "beads": [
     {

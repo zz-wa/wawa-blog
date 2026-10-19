@@ -1,24 +1,53 @@
 ---
-// 单独拿出来的那一句（不挂在绳子上，也没有便利贴，只是字本身）。
-// 宽屏：竖着写在页面右边的空白处，署名是紧挨着右边的一列、落得更低，像落款；
-// 窄屏：横着放在绳子下面，靠右。点它进入文章页。
-import { type Post, plainText, postHref } from '../utils';
+// 单独拿出来的几句话（不挂在绳子上，也没有便利贴，只是字本身）。
+// 宽屏：竖着写在页面两边的空白处（side 决定左边还是右边），同一边的从上往下一句一句排；署名是紧挨着右边的一列、落得更低，像落款；
+//       原文里换行的地方，就是竖排里的另一列（第一行在右边）。
+// 窄屏：横着放在绳子下面，靠右，一句一句排。
+// side 是 hero 的：横着放在标题和简介下面的空白处，每一行单独一行。点它进入文章页。
+import { type Post, postHref } from '../utils';
 
 interface Props {
-	post: Post;
-	/** top = 宽屏用（放在右上角的头像下面），bottom = 窄屏用（绳子下面） */
-	where: 'top' | 'bottom';
+	posts: { post: Post; side: 'left' | 'right' | 'hero' }[];
+	/** top = 宽屏用（放在两边的空白处），bottom = 窄屏用（绳子下面），hero = 标题下面的空白处（横着，不分屏幕大小） */
+	where: 'top' | 'bottom' | 'hero';
 }
 
-const { post, where } = Astro.props;
-const text = plainText(post);
-const { author } = post.data;
+const { posts, where } = Astro.props;
+
+/** 正文按原来的换行拆成一行一行（行末的反斜杠是换行） */
+const linesOf = (post: Post) =>
+	(post.body ?? '')
+		.replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+		.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.split(/\\?\n/)
+		.map((l) => l.trim())
+		.filter(Boolean);
 ---
 
-<a class={`quote quote--${where}`} href={postHref(post)}>
-	<span class="words">{text}</span>
-	{author && <span class="author">—— {author}</span>}
-</a>
+{
+	(where === 'hero'
+		? [posts.filter((q) => q.side === 'hero')]
+		: where === 'bottom'
+			? [posts.filter((q) => q.side !== 'hero')]
+			: [posts.filter((q) => q.side === 'right'), posts.filter((q) => q.side === 'left')]
+	).map(
+		(group, g) =>
+			group.length > 0 && (
+				<div class={`quotes quotes--${where} ${where === 'top' ? (g === 0 ? 'quotes--right' : 'quotes--left') : ''}`}>
+					{group.map(({ post }, i) => (
+						<a class="quote" href={postHref(post)} style={`--tilt: ${(i + g) % 2 === 0 ? -2.5 : 1.8}deg`}>
+							<span class="words">
+								{linesOf(post).map((line) => (
+									<span class="line">{line}</span>
+								))}
+							</span>
+							{post.data.author && <span class="author">—— {post.data.author}</span>}
+						</a>
+					))}
+				</div>
+			),
+	)
+}
 
 <style>
 	.quote {
@@ -26,7 +55,11 @@ const { author } = post.data;
 		color: var(--ink-soft);
 		text-decoration: none;
 		font-family: var(--font-hand);
-		rotate: -2.5deg;
+		rotate: var(--tilt);
+	}
+
+	.line {
+		display: block;
 	}
 
 	.words {
@@ -47,46 +80,97 @@ const { author } = post.data;
 		color: var(--link);
 	}
 
-	/* 窄屏：绳子下面，靠右 */
-	.quote--bottom {
+	/* 标题下面的空白处：横着；宽屏靠右、两句并排浮在空白里（不把绳子往下推），手机上跟在简介后面、两行叠着 */
+	.quotes--hero {
+		margin-top: 28px;
+		text-align: left;
+	}
+
+	.quotes--hero .words {
+		font-size: 1.7rem;
+	}
+
+	/* 宽屏（1100px 以上）：靠右，两句并排在同一行，浮在标题和右上角“最近在读”之间的空地里（不推动别的东西）；
+	   窄一点的屏幕上没有这块空地，跟在简介后面、两行叠着 */
+	@media (min-width: 1100px) {
+		.quotes--hero {
+			position: absolute;
+			right: 300px;
+			top: 140px;
+			margin-top: 0;
+			white-space: nowrap;
+		}
+
+		.quotes--hero .words {
+			display: flex;
+			gap: 1.6em;
+		}
+	}
+
+	/* 窄屏：绳子下面，靠右，一句一句往下排 */
+	.quotes--bottom {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 36px;
 		margin: 8px 0 0 auto;
 		max-width: 22em;
 		text-align: right;
 	}
 
-	@media (max-width: 1319.98px) {
-		.quote--top {
+	@media (max-width: 1439.98px) {
+		.quotes--top {
 			display: none;
 		}
 	}
 
-	/* 宽屏：竖着写在右边的空白里（头像的下面） */
-	@media (min-width: 1320px) {
-		.quote--bottom {
+	/* 宽屏：竖着写在右边的空白里 */
+	@media (min-width: 1440px) {
+		.quotes--bottom {
 			display: none;
 		}
 
-		.quote--top {
+		.quotes--top {
 			position: absolute;
-			left: 100%;
 			top: 330px;
-			margin-left: 80px;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 90px;
+		}
+
+		.quotes--right {
+			left: 100%;
+			margin-left: 8px;
+		}
+
+		.quotes--left {
+			right: 100%;
+			margin-right: 28px;
+			align-items: flex-end;
+		}
+
+		.quotes--top .quote {
 			display: flex;
 			align-items: flex-end;
 			gap: 0.5em;
 		}
 
-		.words,
-		.author {
+		.quotes--top .words,
+		.quotes--top .author {
 			writing-mode: vertical-rl;
 			letter-spacing: 0.14em;
 		}
 
-		.words {
+		.line {
+			display: block;
+		}
+
+		.quotes--top .words {
 			max-height: 78vh;
 		}
 
-		.author {
+		.quotes--top .author {
 			margin: 0;
 			padding-bottom: 0.2em;
 		}

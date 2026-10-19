@@ -11,7 +11,7 @@ import RopeTimeline from '../components/RopeTimeline.astro';
 import SideQuote from '../components/SideQuote.astro';
 import SiteTitle from '../components/SiteTitle.astro';
 import Sparkles from '../components/Sparkles.astro';
-import { GREETING, INTRO, NOW, STANDALONE_POST } from '../consts';
+import { GREETING, INTRO, NOW, STANDALONE_POSTS } from '../consts';
 import ropeData from '../data/rope.json';
 import Base from '../layouts/Base.astro';
 import { byDateDesc } from '../utils';
@@ -20,12 +20,16 @@ import { byDateDesc } from '../utils';
 // 文章多了，更早的放到下一页（/2/、/3/ …），用同一根绳子。
 export const getStaticPaths = (async ({ paginate }) => {
 	// 单独放的那一条不挂在绳子上
-	const posts = (await getCollection('posts')).filter((p) => p.id !== STANDALONE_POST).sort(byDateDesc);
+	const posts = (await getCollection('posts')).filter((p) => !STANDALONE_POSTS.some((q) => q.id === p.id)).sort(byDateDesc);
 	return paginate(posts, { pageSize: ropeData.beads.length });
 }) satisfies GetStaticPaths;
 
 const { page } = Astro.props;
-const standalone = (await getCollection('posts')).find((p) => p.id === STANDALONE_POST);
+const allPosts = await getCollection('posts');
+const standalone = STANDALONE_POSTS.flatMap(({ id, side }) => {
+	const post = allPosts.find((p) => p.id === id);
+	return post ? [{ post, side }] : [];
+});
 ---
 
 <Base home>
@@ -41,7 +45,7 @@ const standalone = (await getCollection('posts')).find((p) => p.id === STANDALON
 			]}
 		/>
 		<header class="hero-inner">
-			{standalone && page.currentPage === 1 && <SideQuote post={standalone} where="top" />}
+			{standalone.length > 0 && page.currentPage === 1 && <SideQuote posts={standalone} where="top" />}
 			<div class="greeting">
 				<h1 class="title-wrap">
 					<SiteTitle />
@@ -50,6 +54,7 @@ const standalone = (await getCollection('posts')).find((p) => p.id === STANDALON
 				</h1>
 				<p class="hello">{GREETING}</p>
 				<p class="intro">{INTRO}</p>
+				{standalone.some((q) => q.side === 'hero') && page.currentPage === 1 && <SideQuote posts={standalone} where="hero" />}
 			</div>
 
 			<!-- 右上角：“最近在读”只有字（没有便利贴），旁边一只蝴蝶；蝴蝶的落脚点在右下 -->
@@ -84,7 +89,7 @@ const standalone = (await getCollection('posts')).find((p) => p.id === STANDALON
 		<span class="perch perch-side perch-r1" data-perch aria-hidden="true"></span>
 		<span class="perch perch-side perch-r2" data-perch aria-hidden="true"></span>
 		<RopeTimeline posts={page.data} />
-		{standalone && page.currentPage === 1 && <SideQuote post={standalone} where="bottom" />}
+		{standalone.length > 0 && page.currentPage === 1 && <SideQuote posts={standalone} where="bottom" />}
 		{
 			(page.url.prev || page.url.next) && (
 				<nav class="pager" aria-label="翻页">
@@ -152,10 +157,6 @@ const standalone = (await getCollection('posts')).find((p) => p.id === STANDALON
 		height: 8px;
 	}
 
-	.greeting {
-		position: relative;
-	}
-
 	/* 右上角的“最近在读”：只有字，靠右，蝴蝶在它右边 */
 	.now {
 		padding: 28px 70px 0 0;
@@ -178,10 +179,18 @@ const standalone = (await getCollection('posts')).find((p) => p.id === STANDALON
 		margin: 0;
 	}
 
+	/* 宽屏：整栏内容比居中再往右靠一点（右边还要留出竖排李娟的位置） */
+	@media (min-width: 1440px) {
+		.hero-inner,
+		.rope-wrap {
+			left: 10px;
+		}
+	}
+
 	/* 首页是一整根绳子，头部和绳子用同一个宽度 */
 	.hero,
 	.rope-wrap {
-		--home-width: min(960px, 100%);
+		--home-width: min(1160px, 100%);
 	}
 
 	/* Hand-drawn butterflies: one resting on the title, one over the wall's top-right corner */
@@ -259,15 +268,15 @@ const standalone = (await getCollection('posts')).find((p) => p.id === STANDALON
 		display: none;
 	}
 
-	@media (min-width: 1320px) {
-		/* 右边的空白让给照片墙，蝴蝶不停在那里 */
+	@media (min-width: 1440px) {
+		/* 右边的空白让给竖排的李娟，蝴蝶不停在那里 */
 		.perch-r1,
 		.perch-r2 {
 			display: none !important;
 		}
 	}
 
-	@media (min-width: 1180px) {
+	@media (min-width: 1260px) {
 		.perch-side {
 			display: block;
 		}
