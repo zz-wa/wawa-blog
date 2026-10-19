@@ -30,7 +30,7 @@ const {
 ---
 
 <Tag
-	class:list={['sticky', `sticky--${color}`, { 'sticky--curl': curl }, className]}
+	class:list={['paper', `paper--${color}`, { 'paper--curl': curl }, className]}
 	style={`--tilt: ${tilt}deg; --pin: ${pinColor}; --pin-x: ${pinX}%; --radius: ${radius}; ${style}`}
 >
 	<span class="pin" aria-hidden="true"></span>
@@ -40,13 +40,18 @@ const {
 <style>
 	/* Looks like a real sticky note: square-ish paper, a slightly darker adhesive strip along the top,
 	   faint paper grain, no outline, and a soft shadow only where the bottom edge lifts off the wall. */
-	.sticky {
+	.paper {
 		position: relative;
 		padding: 28px 20px 18px;
 		font-family: var(--font-hand);
 		font-size: 1rem;
 		line-height: 1.75;
-		color: var(--ink);
+		/* 纸在夜里也是浅色的：纸上的字和纸上用到的 --ink 系列颜色，都换成深色的 note-ink */
+		--ink: var(--note-ink);
+		--ink-soft: color-mix(in srgb, var(--note-ink) 78%, transparent);
+		--ink-faint: color-mix(in srgb, var(--note-ink) 58%, transparent);
+		--link: #7e5b12;
+		color: var(--note-ink);
 		background-color: var(--note-bg);
 		background-image:
 			/* paper grain */
@@ -67,43 +72,43 @@ const {
 		transform: rotate(var(--tilt));
 	}
 
-	.sticky {
+	.paper {
 		--note-shade-1: rgba(44, 56, 35, 0.12);
 		--note-shade-2: rgba(44, 56, 35, 0.32);
 	}
 
 	@media (prefers-color-scheme: dark) {
-		.sticky {
+		.paper {
 			--note-shade-1: rgba(0, 0, 0, 0.35);
 			--note-shade-2: rgba(0, 0, 0, 0.55);
 		}
 	}
 
-	.sticky--yellow {
+	.paper--yellow {
 		--note-bg: var(--note-yellow);
 	}
 
-	.sticky--peach {
+	.paper--peach {
 		--note-bg: var(--note-peach);
 	}
 
-	.sticky--cream {
+	.paper--cream {
 		--note-bg: var(--note-cream);
 	}
 
-	.sticky--blue {
+	.paper--blue {
 		--note-bg: var(--note-blue);
 	}
 
-	.sticky--pink {
+	.paper--pink {
 		--note-bg: var(--note-pink);
 	}
 
-	.sticky--mint {
+	.paper--mint {
 		--note-bg: var(--note-mint);
 	}
 
-	.sticky {
+	.paper {
 		--note-edge: color-mix(in srgb, var(--note-bg) 76%, var(--ink) 24%);
 	}
 
@@ -128,7 +133,7 @@ const {
 	}
 
 	/* A lifted dog-ear: wall colour where the corner came away, the paper's back shaded towards the fold */
-	.sticky--curl::after {
+	.paper--curl::after {
 		content: '';
 		position: absolute;
 		z-index: 2;

@@ -1,0 +1,94 @@
+---
+// 单独拿出来的那一句（不挂在绳子上，也没有便利贴，只是字本身）。
+// 宽屏：竖着写在页面右边的空白处，署名是紧挨着右边的一列、落得更低，像落款；
+// 窄屏：横着放在绳子下面，靠右。点它进入文章页。
+import { type Post, plainText, postHref } from '../utils';
+
+interface Props {
+	post: Post;
+	/** top = 宽屏用（放在右上角的头像下面），bottom = 窄屏用（绳子下面） */
+	where: 'top' | 'bottom';
+}
+
+const { post, where } = Astro.props;
+const text = plainText(post);
+const { author } = post.data;
+---
+
+<a class={`quote quote--${where}`} href={postHref(post)}>
+	<span class="words">{text}</span>
+	{author && <span class="author">—— {author}</span>}
+</a>
+
+<style>
+	.quote {
+		display: block;
+		color: var(--ink-soft);
+		text-decoration: none;
+		font-family: var(--font-hand);
+		rotate: -2.5deg;
+	}
+
+	.words {
+		font-size: 1.8rem;
+		line-height: 1.7;
+		text-wrap: balance;
+	}
+
+	.author {
+		display: block;
+		margin-top: 0.4em;
+		font-size: 1.15rem;
+		color: var(--ink-faint);
+		text-align: right;
+	}
+
+	.quote:hover .words {
+		color: var(--link);
+	}
+
+	/* 窄屏：绳子下面，靠右 */
+	.quote--bottom {
+		margin: 8px 0 0 auto;
+		max-width: 22em;
+		text-align: right;
+	}
+
+	@media (max-width: 1319.98px) {
+		.quote--top {
+			display: none;
+		}
+	}
+
+	/* 宽屏：竖着写在右边的空白里（头像的下面） */
+	@media (min-width: 1320px) {
+		.quote--bottom {
+			display: none;
+		}
+
+		.quote--top {
+			position: absolute;
+			left: 100%;
+			top: 330px;
+			margin-left: 80px;
+			display: flex;
+			align-items: flex-end;
+			gap: 0.5em;
+		}
+
+		.words,
+		.author {
+			writing-mode: vertical-rl;
+			letter-spacing: 0.14em;
+		}
+
+		.words {
+			max-height: 78vh;
+		}
+
+		.author {
+			margin: 0;
+			padding-bottom: 0.2em;
+		}
+	}
+</style>

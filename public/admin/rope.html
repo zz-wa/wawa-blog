@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>结绳记事 · 绳子编辑</title>
+<style>
+  :root{--bg:#F2F6E6;--sheet:#FAFCF5;--ink:#2C3823;--muted:#5F6D58;--rule:#D6DFCC;--gold:#D4A93F;--rope:#2A2420}
+  @media (prefers-color-scheme:dark){:root{--bg:#3C4143;--sheet:#454A4C;--ink:#EEF0EC;--muted:#B3B9B6;--rule:#5A6062}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 "Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:20px 16px 48px}
+  h1{font:500 22px/1.3 "KaiTi","STKaiti","Kaiti SC",serif;margin:0 0 4px}
+  .tip{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+  .stage{background:#F2F6E6;border:1px solid var(--rule);border-radius:12px;overflow:hidden;touch-action:none}
+  svg{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
+  .panel{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:14px 16px}
+  .panel h2{font-size:14px;margin:14px 0 6px;color:var(--muted);font-weight:700;letter-spacing:.06em}
+  .panel h2:first-child{margin-top:0}
+  .row{display:flex;align-items:center;gap:10px;margin:6px 0}
+  .row label{flex:0 0 74px;font-size:13.5px;color:var(--muted)}
+  .row input[type=range]{flex:1;min-width:0}
+  .row output{flex:0 0 34px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+  .sw{display:flex;gap:8px;flex-wrap:wrap}
+  .sw button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer}
+  .sw button[aria-pressed=true]{border-color:var(--ink)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  button.b{font:inherit;font-size:13.5px;padding:6px 12px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer}
+  button.b:hover{border-color:var(--gold)}
+  button.b.main{background:var(--gold);border-color:var(--gold);color:#2C2208}
+  textarea{width:100%;height:150px;margin-top:8px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:8px;resize:vertical}
+  .msg{min-height:20px;font-size:13px;color:#3E7C57;margin-top:6px}
+  .help{font-size:13px;color:var(--muted);margin:0}
+  .help b{color:var(--ink);font-weight:500}
+  .hd{cursor:grab}.hd:active{cursor:grabbing}
+  .nt{font:500 15px "KaiTi","STKaiti","Kaiti SC","Noto Sans SC",serif;fill:#3A3322}
+  .ne{font:11px "Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;fill:#5A4F38}
+  .dt{font:10.5px "Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;fill:#6F7B63;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>结绳记事 · 绳子编辑</h1>
+  <p class="tip">拖动金色小圆点改变绳子的走向，拖动彩色球钉改变便利贴挂在绳子的哪个位置。球钉直接把便利贴按在绳子上。改好后点“导出配置”，把得到的内容交给网站。</p>
+  <div class="grid">
+    <div class="stage"><svg id="svg" viewBox="0 0 700 730" role="img" aria-label="绳子和便利贴的编辑画布"></svg></div>
+    <div class="panel">
+      <h2>怎么操作</h2>
+      <p class="help"><b>拖金色圆点</b>：弯曲绳子。<b>双击绳子</b>：在那里加一个弯点。<b>选中弯点后按 Delete</b>：删掉它。<b>拖彩色球钉</b>：沿绳子移动便利贴。点一下球钉可以换它的颜色。</p>
+      <h2>绳子</h2>
+      <div class="row"><label for="th">粗细</label><input id="th" type="range" min="1" max="6" step="0.2"><output id="thv"></output></div>
+      <div class="row"><label for="wb">起伏</label><input id="wb" type="range" min="0" max="14" step="0.5"><output id="wbv"></output></div>
+      <div class="row"><label for="bs">球钉大小</label><input id="bs" type="range" min="4" max="11" step="0.5"><output id="bsv"></output></div>
+      <div class="row"><label>麻绳纹理</label><input id="tw" type="checkbox"></div>
+      <div class="row"><label>显示弯点</label><input id="hd" type="checkbox" checked></div>
+      <div class="row"><label>绳子颜色</label><div class="sw" id="rc"></div></div>
+      <div class="btns"><button class="b" id="reseed">换一种起伏</button><button class="b" id="spread">便利贴均匀分布</button></div>
+      <h2>选中的球钉颜色</h2>
+      <div class="sw" id="bc"></div>
+      <h2>保存和导入</h2>
+      <div class="btns"><button class="b main" id="exp">导出配置</button><button class="b" id="imp">导入配置</button><button class="b" id="rst">恢复默认</button></div>
+      <textarea id="ta" spellcheck="false" aria-label="配置内容" placeholder="点“导出配置”会在这里生成内容；也可以把以前导出的内容粘贴到这里，再点“导入配置”。"></textarea>
+      <div class="msg" id="msg" role="status"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+var NS="http://www.w3.org/2000/svg",W=700,H=730;
+var POSTS=[
+ ["兄弟学校","因为好多好多个学校的巧合","2026.10.18"],
+ ["上周的现在","上周的现在，我窝在刚收拾好的宿舍里","2026.09.13"],
+ ["写给辩论","我对什么都是淡淡的，对你也是。","2025.11.10"],
+ ["献给阿尔吉侬的花束","是什么呐，是一时兴起，是记忆浮现","2025.11.06"],
+ ["桂花好香好香","路上都是桂花甜津津味道","2025.10.21"],
+ ["当下","所以不要把目标变成重点，要把当下高高举起","2025.10.09"],
+ ["桂花年年香","花香也并不知道我的心事。","2025.09.30"],
+ ["李娟","慢慢地写啊写啊，才成为此刻的自己。","2025.08.03"],
+ ["历史课","纪念我的最后一节历史课","2025.06.16"]
+];
+var NOTE_COL=[["#F6E4A6","#E3CC80"],["#F6DFCF","#E5C6AF"],["#FBF7EC","#E6DEC6"]];
+var BEAD=[["#D9BFBD","#C8A6A4","#A98481"],["#B5C4D1","#9DAFBF","#7C90A3"],["#BCC9B6","#A5B59E","#86987F"],["#DCCBA8","#CDB78F","#AE9A70"],["#C6B8CA","#B3A2B8","#92819A"]];
+var ROPE_COLORS=["#2A2420","#4A3426","#8A6B45","#2F3E2C"];
+var ANCHORS=[[110,172],[300,172],[490,174],[490,365],[300,360],[110,367],[110,558],[300,562],[490,558]];
+
+function defaults(){return {
+ version:1,width:W,height:H,
+ points:[[30,172],[210,170],[400,172],[580,176],[650,240],[600,350],[440,366],[260,360],[110,368],[40,450],[100,552],[280,562],[450,556],[606,556]],
+ wobble:6,seed:7,thickness:2.4,ropeColor:ROPE_COLORS[0],twist:true,beadSize:7.2,
+ beads:POSTS.map(function(_,i){return {s:0,color:i%5}}),_init:true
+}}
+var cfg=null,sel=-1,selBead=0,samples=null;
+try{var raw=localStorage.getItem("wawa-rope");if(raw)cfg=JSON.parse(raw)}catch(e){}
+if(!cfg||!cfg.points||cfg.points.length<3){cfg=defaults()}
+
+/* ---- geometry ---- */
+function catmull(pts){
+  var out=[],n=pts.length,P=[pts[0]].concat(pts,[pts[n-1]]);
+  for(var i=1;i<P.length-2;i++){
+    var p0=P[i-1],p1=P[i],p2=P[i+1],p3=P[i+2];
+    for(var k=0;k<14;k++){
+      var t=k/14,t2=t*t,t3=t2*t;
+      out.push({x:.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3),
+                y:.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3),seg:i-1});
+    }
+  }
+  out.push({x:pts[n-1][0],y:pts[n-1][1],seg:n-2});
+  return out;
+}
+function noise(t,seed){return (Math.sin(t*.9+seed*1.7)+.6*Math.sin(t*2.3+seed*3.1)+.35*Math.sin(t*5.1+seed*.7))/1.95}
+function build(){
+  var base=catmull(cfg.points),len=[0],i;
+  for(i=1;i<base.length;i++)len[i]=len[i-1]+Math.hypot(base[i].x-base[i-1].x,base[i].y-base[i-1].y);
+  var pts=base.map(function(p,i){
+    var a=base[Math.max(0,i-1)],b=base[Math.min(base.length-1,i+1)],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+    var taper=Math.min(1,len[i]/50,(len[len.length-1]-len[i])/50),o=cfg.wobble*noise(len[i]/38,cfg.seed)*taper;
+    return {x:p.x+(-dy/d)*o,y:p.y+(dx/d)*o,seg:p.seg,bx:p.x,by:p.y};
+  });
+  var cum=[0];for(i=1;i<pts.length;i++)cum[i]=cum[i-1]+Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);
+  var total=cum[cum.length-1];
+  samples={pts:pts,cum:cum,total:total};
+}
+function pointAt(s){
+  var L=samples.cum,P=samples.pts,t=s*samples.total,lo=0,hi=L.length-1;
+  while(hi-lo>1){var m=(lo+hi)>>1;if(L[m]<=t)lo=m;else hi=m}
+  var f=(t-L[lo])/((L[hi]-L[lo])||1);
+  return {x:P[lo].x+(P[hi].x-P[lo].x)*f,y:P[lo].y+(P[hi].y-P[lo].y)*f};
+}
+function nearest(x,y,useBase){
+  var P=samples.pts,best=1e9,bi=0;
+  for(var i=0;i<P.length;i++){var px=useBase?P[i].bx:P[i].x,py=useBase?P[i].by:P[i].y,d=(px-x)*(px-x)+(py-y)*(py-y);if(d<best){best=d;bi=i}}
+  return {i:bi,s:samples.cum[bi]/samples.total,d:Math.sqrt(best)};
+}
+function initBeads(){
+  cfg.beads.forEach(function(b,i){var a=ANCHORS[i%ANCHORS.length];b.s=nearest(a[0],a[1],false).s});
+  delete cfg._init;
+}
+build();if(cfg._init)initBeads();
+
+/* ---- drawing ---- */
+var svg=document.getElementById("svg");
+function el(n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function rnd(i,k){var x=Math.sin(i*127.1+k*311.7+cfg.seed*13.3)*43758.5453;return x-Math.floor(x)}
+function render(){
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
+  var defs=el("defs",{},svg);
+  BEAD.forEach(function(c,i){var g=el("radialGradient",{id:"bg"+i,cx:".35",cy:".3",r:".8"},defs);
+    [[0,c[0]],[.6,c[1]],[1,c[2]]].forEach(function(s){el("stop",{offset:s[0],"stop-color":s[1]},g)})});
+  el("rect",{width:W,height:H,fill:"#F2F6E6"},svg);
+  el("rect",{x:20,y:16,width:660,height:116,rx:10,fill:"none",stroke:"#B9C7A8","stroke-width":1,"stroke-dasharray":"4 5"},svg);
+  var lab=el("text",{x:350,y:80,"text-anchor":"middle","class":"dt"},svg);lab.textContent="这里是标题和留言云朵的位置";
+  var P=samples.pts,d="M"+P[0].x.toFixed(1)+" "+P[0].y.toFixed(1);
+  for(var i=1;i<P.length;i++)d+="L"+P[i].x.toFixed(1)+" "+P[i].y.toFixed(1);
+  var rope=el("path",{id:"rope",d:d,fill:"none",stroke:cfg.ropeColor,"stroke-width":cfg.thickness,"stroke-linecap":"round","stroke-linejoin":"round"},svg);
+  if(cfg.twist)el("path",{d:d,fill:"none",stroke:"#9A8E80","stroke-width":cfg.thickness,"stroke-dasharray":(cfg.thickness*.45).toFixed(2)+" "+(cfg.thickness*1.05).toFixed(2),opacity:".55"},svg);
+  var a=P[0],b=P[3],c=P[P.length-1],e=P[P.length-4];
+  [[a,b,-1],[c,e,1]].forEach(function(t){for(var k=-1;k<=1;k++){var ang=Math.atan2(t[1].y-t[0].y,t[1].x-t[0].x)+Math.PI+k*.45;
+    el("path",{d:"M"+t[0].x+" "+t[0].y+"l"+(Math.cos(ang)*9).toFixed(1)+" "+(Math.sin(ang)*9).toFixed(1),stroke:cfg.ropeColor,"stroke-width":Math.max(.7,cfg.thickness*.38),"stroke-linecap":"round",fill:"none"},svg)}});
+  cfg.beads.forEach(function(bd,i){
+    var p=pointAt(bd.s),post=POSTS[i%POSTS.length],w=[124,136,148][Math.floor(rnd(i,1)*3)],rot=(rnd(i,2)-.5)*11,tw=5;
+    var tl=post[0].match(/.{1,8}/g).slice(0,2),ex=post[1].match(/.{1,10}/g).slice(0,3),h=28+tl.length*19+ex.length*16+12;
+    var col=NOTE_COL[i%3],g=el("g",{transform:"rotate("+rot.toFixed(1)+" "+p.x.toFixed(1)+" "+(p.y+tw).toFixed(1)+")"},svg);
+    el("rect",{x:(p.x-w/2).toFixed(1),y:(p.y+tw).toFixed(1),width:w,height:h,rx:2,fill:col[0],stroke:col[1],"stroke-width":.8},g);
+    tl.forEach(function(t,k){var x=el("text",{x:(p.x-w/2+10).toFixed(1),y:(p.y+tw+27+k*19).toFixed(1),"class":"nt"},g);x.textContent=t});
+    ex.forEach(function(t,k){var x=el("text",{x:(p.x-w/2+10).toFixed(1),y:(p.y+tw+27+tl.length*19+12+k*16).toFixed(1),"class":"ne"},g);x.textContent=t});
+    var dt=el("text",{x:p.x.toFixed(1),y:(p.y-12).toFixed(1),"text-anchor":"middle","class":"dt"},svg);dt.textContent=post[2];
+  });
+  cfg.beads.forEach(function(bd,i){
+    var p=pointAt(bd.s),r=cfg.beadSize,c=bd.color%5;
+    el("ellipse",{cx:(p.x+1.5).toFixed(1),cy:(p.y+r*.9).toFixed(1),rx:r*.85,ry:r*.3,fill:"#2A2420",opacity:".18"},svg);
+    var g=el("g",{"class":"hd","data-bead":i,tabindex:0,role:"slider","aria-label":"便利贴"+(i+1)+"的位置"},svg);
+    el("circle",{cx:p.x.toFixed(1),cy:p.y.toFixed(1),r:r+7,fill:"transparent"},g);
+    el("circle",{cx:p.x.toFixed(1),cy:p.y.toFixed(1),r:r,fill:"url(#bg"+c+")",stroke:i===selBead?"#2C3823":"none","stroke-width":1.4},g);
+    el("circle",{cx:(p.x-r*.32).toFixed(1),cy:(p.y-r*.36).toFixed(1),r:r*.26,fill:"#fff",opacity:".5"},g);
+  });
+  if(document.getElementById("hd").checked){
+    cfg.points.forEach(function(pt,i){
+      var g=el("g",{"class":"hd","data-pt":i},svg);
+      el("circle",{cx:pt[0],cy:pt[1],r:14,fill:"transparent"},g);
+      el("circle",{cx:pt[0],cy:pt[1],r:i===sel?8:6,fill:i===sel?"#D4A93F":"#FFF3C4",stroke:"#B88A1C","stroke-width":2},g);
+    });
+  }
+}
+
+/* ---- interaction ---- */
+function toSvg(ev){var m=svg.getScreenCTM().inverse(),p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;p=p.matrixTransform(m);return {x:p.x,y:p.y}}
+var drag=null;
+svg.addEventListener("pointerdown",function(ev){
+  var t=ev.target.closest&&ev.target.closest("[data-pt],[data-bead]");if(!t)return;
+  if(t.hasAttribute("data-pt")){drag={k:"pt",i:+t.getAttribute("data-pt")};sel=drag.i}
+  else{drag={k:"bead",i:+t.getAttribute("data-bead")};selBead=drag.i;syncBeadSw()}
+  try{svg.setPointerCapture(ev.pointerId)}catch(e){}
+  ev.preventDefault();render();
+});
+svg.addEventListener("pointermove",function(ev){
+  if(!drag)return;var p=toSvg(ev);
+  if(drag.k==="pt"){cfg.points[drag.i]=[Math.round(Math.min(W-6,Math.max(6,p.x))),Math.round(Math.min(H-6,Math.max(6,p.y)))];build()}
+  else{
+    var n=nearest(p.x,p.y,false),lo=drag.i>0?cfg.beads[drag.i-1].s+.012:0,hi=drag.i<cfg.beads.length-1?cfg.beads[drag.i+1].s-.012:1;
+    cfg.beads[drag.i].s=Math.min(hi,Math.max(lo,n.s));
+  }
+  render();
+});
+function endDrag(){if(drag){drag=null;save()}}
+svg.addEventListener("pointerup",endDrag);svg.addEventListener("pointercancel",endDrag);
+svg.addEventListener("dblclick",function(ev){
+  if(ev.target.closest&&ev.target.closest("[data-pt],[data-bead]"))return;
+  var p=toSvg(ev),n=nearest(p.x,p.y,false);if(n.d>18)return;
+  var s=samples.pts[n.i],at=Math.min(cfg.points.length-1,s.seg+1);
+  cfg.points.splice(at,0,[Math.round(s.bx),Math.round(s.by)]);sel=at;
+  document.getElementById("hd").checked=true;build();render();save();say("加了一个弯点，拖动它试试");
+});
+window.addEventListener("keydown",function(ev){
+  if((ev.key==="Delete"||ev.key==="Backspace")&&sel>=0&&!/TEXTAREA|INPUT/.test(document.activeElement.tagName)){
+    if(cfg.points.length<=3){say("至少要留 3 个弯点");return}
+    var keep=cfg.beads.map(function(b){return pointAt(b.s)});
+    cfg.points.splice(sel,1);sel=-1;build();
+    cfg.beads.forEach(function(b,i){b.s=nearest(keep[i].x,keep[i].y,false).s});
+    for(var i=1;i<cfg.beads.length;i++)if(cfg.beads[i].s<=cfg.beads[i-1].s)cfg.beads[i].s=Math.min(1,cfg.beads[i-1].s+.02);
+    render();save();ev.preventDefault();
+  }
+  var g=document.activeElement&&document.activeElement.getAttribute&&document.activeElement.getAttribute("data-bead");
+  if(g!==null&&g!==undefined&&(ev.key==="ArrowLeft"||ev.key==="ArrowRight")){
+    var i=+g,d=(ev.key==="ArrowRight"?1:-1)*.01,lo=i>0?cfg.beads[i-1].s+.012:0,hi=i<cfg.beads.length-1?cfg.beads[i+1].s-.012:1;
+    cfg.beads[i].s=Math.min(hi,Math.max(lo,cfg.beads[i].s+d));selBead=i;render();save();
+    var f=svg.querySelector('[data-bead="'+i+'"]');if(f)f.focus();ev.preventDefault();
+  }
+});
+
+/* ---- panel ---- */
+function $(id){return document.getElementById(id)}
+function say(t){$("msg").textContent=t}
+function save(){try{localStorage.setItem("wawa-rope",JSON.stringify(cfg))}catch(e){}}
+function bindRange(id,key,fmt){var r=$(id),o=$(id+"v");r.value=cfg[key];o.textContent=fmt(cfg[key]);
+  r.addEventListener("input",function(){cfg[key]=+r.value;o.textContent=fmt(cfg[key]);build();render();save()})}
+bindRange("th","thickness",function(v){return (+v).toFixed(1)});
+bindRange("wb","wobble",function(v){return (+v).toFixed(1)});
+bindRange("bs","beadSize",function(v){return (+v).toFixed(1)});
+$("tw").checked=!!cfg.twist;$("tw").addEventListener("change",function(){cfg.twist=$("tw").checked;render();save()});
+$("hd").addEventListener("change",function(){render()});
+function swatches(box,list,isRope){
+  list.forEach(function(c,i){var b=document.createElement("button");b.type="button";b.setAttribute("aria-label",isRope?"绳子颜色"+(i+1):"球钉颜色"+(i+1));
+    b.style.background=isRope?c:"radial-gradient(circle at 35% 30%,"+c[0]+","+c[1]+" 60%,"+c[2]+")";
+    b.addEventListener("click",function(){if(isRope){cfg.ropeColor=c}else{cfg.beads[selBead].color=i}render();syncBeadSw();syncRopeSw();save()});
+    box.appendChild(b)});
+}
+swatches($("rc"),ROPE_COLORS,true);swatches($("bc"),BEAD,false);
+function syncRopeSw(){[].forEach.call($("rc").children,function(b,i){b.setAttribute("aria-pressed",ROPE_COLORS[i]===cfg.ropeColor)})}
+function syncBeadSw(){[].forEach.call($("bc").children,function(b,i){b.setAttribute("aria-pressed",cfg.beads[selBead].color%5===i)})}
+$("reseed").addEventListener("click",function(){cfg.seed=Math.floor(Math.random()*90)+1;var keep=cfg.beads.map(function(b){return b.s});build();cfg.beads.forEach(function(b,i){b.s=keep[i]});render();save()});
+$("spread").addEventListener("click",function(){var n=cfg.beads.length;cfg.beads.forEach(function(b,i){b.s=.07+i*(.86/(n-1))});render();save();say("已经均匀分布")});
+function exportCfg(){
+  var o={version:1,width:W,height:H,points:cfg.points,wobble:cfg.wobble,seed:cfg.seed,thickness:cfg.thickness,ropeColor:cfg.ropeColor,twist:cfg.twist,beadSize:cfg.beadSize,
+    beads:cfg.beads.map(function(b){return {s:+b.s.toFixed(4),color:b.color%5}})};
+  return JSON.stringify(o,null,2);
+}
+$("exp").addEventListener("click",function(){
+  var t=exportCfg();$("ta").value=t;$("ta").select();var ok=false;
+  try{ok=document.execCommand("copy")}catch(e){}
+  if(!ok&&navigator.clipboard){navigator.clipboard.writeText(t).then(function(){say("已复制，可以交给网站了")},function(){say("请手动复制下面的内容")});return}
+  say(ok?"已复制，可以交给网站了":"请手动复制下面的内容");
+});
+$("imp").addEventListener("click",function(){
+  try{var o=JSON.parse($("ta").value);
+    if(!Array.isArray(o.points)||o.points.length<3||!Array.isArray(o.beads))throw new Error("格式不对");
+    cfg={points:o.points,wobble:+o.wobble||0,seed:+o.seed||7,thickness:+o.thickness||2.4,ropeColor:o.ropeColor||ROPE_COLORS[0],twist:o.twist!==false,beadSize:+o.beadSize||7.2,
+      beads:o.beads.map(function(b){return {s:+b.s,color:(+b.color||0)%5}})};
+    while(cfg.beads.length<POSTS.length)cfg.beads.push({s:Math.min(.98,(cfg.beads.length?cfg.beads[cfg.beads.length-1].s:0)+.04),color:cfg.beads.length%5});
+    sel=-1;selBead=0;build();refreshPanel();render();save();say("导入成功");
+  }catch(e){say("导入失败：内容不是有效的配置")}
+});
+$("rst").addEventListener("click",function(){cfg=defaults();sel=-1;selBead=0;build();initBeads();refreshPanel();render();save();say("已恢复默认")});
+function refreshPanel(){
+  $("th").value=cfg.thickness;$("thv").textContent=(+cfg.thickness).toFixed(1);
+  $("wb").value=cfg.wobble;$("wbv").textContent=(+cfg.wobble).toFixed(1);
+  $("bs").value=cfg.beadSize;$("bsv").textContent=(+cfg.beadSize).toFixed(1);
+  $("tw").checked=!!cfg.twist;syncRopeSw();syncBeadSw();
+}
+refreshPanel();render();save();
+window.__rope={get:function(){return exportCfg()}};
+})();
+</script>
+</body>
+</html>

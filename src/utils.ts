@@ -1,3 +1,4 @@
+import { getImage } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 
 export type Post = CollectionEntry<'posts'>;
@@ -20,6 +21,39 @@ function ymd(date: Date): { y: string; m: string; d: string } {
 	}).formatToParts(date);
 	const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
 	return { y: get('year'), m: get('month'), d: get('day') };
+}
+
+/** 2026-10-18 — the machine-readable form, in Beijing time (for meta tags) */
+export function isoDate(date: Date): string {
+	const { y, m, d } = ymd(date);
+	return `${y}-${m}-${d}`;
+}
+
+// Pictures that sit next to the posts (./xxx.jpg in markdown, or `cover:`), as Astro image objects
+const postPictures = import.meta.glob<ImageMetadata>('/src/content/posts/*.{jpg,jpeg,png,webp}', {
+	eager: true,
+	import: 'default',
+});
+
+/**
+ * Share picture for a post: its cover, else the first picture in the body, as a site-root path
+ * to an optimised JPEG (JPEG because chat apps and link previews all read it). undefined = use og.png.
+ */
+/** The picture that belongs to a post (its cover, else the first picture in the body), as an Astro image object */
+export function pictureFor(post: Post): ImageMetadata | undefined {
+	if (post.data.cover) return post.data.cover;
+	const m = (post.body ?? '').match(/!\[[^\]]*\]\(\.\/([^)\s]+)\)/);
+	return m ? postPictures[`/src/content/posts/${m[1]}`] : undefined;
+}
+
+export async function ogImageFor(post: Post): Promise<string | undefined> {
+	let source: ImageMetadata | undefined = post.data.cover;
+	if (!source) {
+		const m = (post.body ?? '').match(/!\[[^\]]*\]\(\.\/([^)\s]+)\)/);
+		if (m) source = postPictures[`/src/content/posts/${m[1]}`];
+	}
+	if (!source) return undefined;
+	return (await getImage({ src: source, width: Math.min(1200, source.width), format: 'jpeg' })).src;
 }
 
 /** 2026.10.18 */
@@ -58,7 +92,7 @@ export function excerpt(post: Post, n = 40): string {
 }
 
 /** Notes longer than this are clipped on the wall and get a "读完" link. */
-export const NOTE_SHORT_LIMIT = 140;
+export const NOTE_SHORT_LIMIT = 220;
 
 export function postHref(post: Post): string {
 	return post.data.type === 'reading' ? `/reading/${post.id}/` : `/notes/${post.id}/`;
@@ -75,6 +109,11 @@ function rand(seed: string): number {
 	h = Math.imul(h, 0x5bd1e995);
 	h ^= h >>> 15;
 	return (h >>> 0) / 4294967296;
+}
+
+/** A number in [0, 1) that is fixed for this post id and salt — never changes between builds or refreshes. */
+export function seeded(id: string, salt: string): number {
+	return rand(`${id}:${salt}`);
 }
 
 const between = (r: number, min: number, max: number) => Math.round(min + r * (max - min));

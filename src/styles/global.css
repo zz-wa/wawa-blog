@@ -1,6 +1,6 @@
 @font-face {
 	font-family: 'PingFang SaTuo';
-	src: url('/fonts/pingfang-satuo.ttf') format('truetype');
+	src: url('/fonts/pingfang-satuo-v1.woff2') format('woff2');
 	font-display: swap;
 }
 
@@ -19,6 +19,10 @@
 	--note-yellow: #f6e4a6;
 	--note-peach: #f6dfcf;
 	--note-cream: #fbf7ec;
+	--note-ink: #3a3322; /* 便利贴上的字：白天夜里都用这个深色 */
+	--rope: #2a2420; /* 结绳记事的绳子 */
+	--rope-twist: #9a8e80; /* 绳子上的麻绳纹理 */
+	--rope-dark: #cbbfa8; /* 夜里绳子的颜色（只在深色模式用到） */
 	/* butterfly palette: soft sky, blossom pink, mint (from the crayon butterfly) */
 	--note-blue: #dfeafb;
 	--note-pink: #fbe0e8;
@@ -40,25 +44,32 @@
 }
 
 @media (prefers-color-scheme: dark) {
+	/* 深色模式：不是黑夜而是起了雾的夜——背景是雾灰，便利贴在夜里仍然是浅色纸张，字用深色（--note-ink）。
+	   数值来自 DESIGN.md。 */
 	:root {
-		--bg: #18211a;
-		--bg-edge: #2c3a2e;
-		--ink: #e6ebda;
-		--ink-soft: #b5bfa7;
-		--ink-faint: #93a08a;
-		--osmanthus: #c9a04a;
-		--link: #e2bf6e;
-		--note-yellow: #4a4224;
-		--note-peach: #4a3a2e;
-		--note-cream: #34392e;
-		--note-blue: #2b3546;
-		--note-pink: #43303a;
-		--note-mint: #26403a;
-		--spark-yellow: #c9ad55;
-		--spark-mint: #6fae8a;
-		--spark-lilac: #8885c4;
-		--spark-blue: #6f91c4;
-		--spark-pink: #c98ea1;
+		--bg: #454a4c;
+		--bg-edge: #5a6062;
+		--ink: #eef0ec;
+		--ink-soft: #cbd0cc;
+		--ink-faint: #b3b9b6;
+		--osmanthus: #d9b45a;
+		--link: #e4c57a;
+		--note-yellow: #dccb92;
+		--note-peach: #ddbfac;
+		--note-cream: #e3dccb;
+		/* 其余几种纸色（只在单篇碎碎念页等地方用到）也是浅色纸 */
+		--note-blue: #cdd8e4;
+		--note-pink: #e4cdd6;
+		--note-mint: #c9e1d8;
+		--note-ink: #3a3322;
+		/* 深褐黑色的绳子放在雾灰背景上看不清，夜里改成浅麻色 */
+		--rope-dark: #cbbfa8;
+		--rope-twist: #8f8472;
+		--spark-yellow: #e6c458;
+		--spark-mint: #7fd0a3;
+		--spark-lilac: #a29de6;
+		--spark-blue: #7fa6e6;
+		--spark-pink: #e69bb7;
 
 		color-scheme: dark;
 	}
@@ -83,7 +94,8 @@ body {
 	font-size: 18px;
 	line-height: 1.8;
 	color: var(--ink);
-	background: var(--bg);
+	/* 底色由 html 负责。body 不再自己涂底色，这样飞行中的蝴蝶（z-index: -1）才能显示在底色上、内容后面 */
+	background: transparent;
 	overflow-wrap: break-word;
 	-webkit-font-smoothing: antialiased;
 }

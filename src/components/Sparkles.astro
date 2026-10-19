@@ -12,7 +12,7 @@ const { stars } = Astro.props;
 	{
 		stars.map(([left, top, size, color, kind]) => (
 			<span
-				class={`spark ${kind}`}
+				class={`spark spark-${kind}`}
 				style={`left:${left}%;top:${top}%;width:${size}px;height:${size}px;--c:var(--spark-${color})`}
 			>
 				{kind === 'star' && (
@@ -29,7 +29,8 @@ const { stars } = Astro.props;
 	.sparkles {
 		position: absolute;
 		inset: 0;
-		z-index: 0;
+		/* 在内容的下面：小星星不会盖住字 */
+		z-index: -1;
 		pointer-events: none;
 		overflow: hidden;
 	}
@@ -46,12 +47,12 @@ const { stars } = Astro.props;
 		fill: var(--c);
 	}
 
-	.spark.dot {
+	.spark.spark-dot {
 		border-radius: 50%;
 		background: var(--c);
 	}
 
-	.spark.ring {
+	.spark.spark-ring {
 		border-radius: 50%;
 		border: 2px solid var(--c);
 	}

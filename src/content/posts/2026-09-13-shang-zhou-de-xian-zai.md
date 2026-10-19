@@ -2,7 +2,8 @@
 date: 2026-09-13T19:55:17+08:00
 type: note
 title: "上周的现在"
-cover: /images/shang-zhou-de-xian-zai-1.jpg
+cover: ./shang-zhou-de-xian-zai-1.jpg
+coverAlt: 翻开的书
 source: bluesky
 ---
 

@@ -17,7 +17,7 @@ for ch in text:
     # flip y: font units are y-up, SVG is y-down
     t = (1, 0, 0, -1, x, 0)
     gs[g].draw(TransformPen(pen, t))
-    gs[g].draw(TransformPen(bounds, t))
+    gs[g].draw(TransformPen(bounds, t))x
     x += hmtx[g][0] + tracking
 xmin, ymin, xmax, ymax = bounds.bounds
 pad = upm * 0.02

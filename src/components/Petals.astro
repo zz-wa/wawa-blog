@@ -32,8 +32,12 @@ const petals = [
 	.petals {
 		position: absolute;
 		inset: 0;
+		/* 层级在内容的下面：花瓣不会盖住任何字 */
+		z-index: -1;
 		overflow: hidden;
 		pointer-events: none;
+		/* 让 cqh（容器高度）有参照：花瓣落到的距离按这一块区域的高度算 */
+		container-type: size;
 	}
 
 	.petal {
@@ -52,25 +56,25 @@ const petals = [
 		height: 100%;
 	}
 
+	/* 只动 transform 和 opacity（不动 top，不会每一帧都重新排版）。
+	   起点是 top: -16px 那条线，往下落的距离按容器高度算。 */
 	@keyframes fall {
 		0% {
-			top: -16px;
 			opacity: 0;
-			transform: translateX(0) rotate(0deg);
+			transform: translate(0, 0) rotate(0deg);
 		}
 		10% {
 			opacity: 0.8;
 		}
 		50% {
-			transform: translateX(26px) rotate(160deg);
+			transform: translate(26px, 50cqh) rotate(160deg);
 		}
 		85% {
 			opacity: 0.7;
 		}
 		100% {
-			top: 100%;
 			opacity: 0;
-			transform: translateX(-8px) rotate(320deg);
+			transform: translate(-8px, calc(100cqh + 16px)) rotate(320deg);
 		}
 	}
 

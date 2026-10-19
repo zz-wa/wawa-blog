@@ -77,8 +77,17 @@
 		document.querySelectorAll<HTMLImageElement>('.prose img').forEach((img) => {
 			img.tabIndex = 0;
 			img.setAttribute('role', 'button');
+			// the page loads a small version; the viewer wants the biggest one in the srcset
+			const biggest = () => {
+				const best = (img.getAttribute('srcset') ?? '')
+					.split(',')
+					.map((c) => c.trim().split(/\s+/))
+					.filter((c) => c[0])
+					.sort((a, b) => parseInt(b[1] ?? '0') - parseInt(a[1] ?? '0'))[0];
+				return best?.[0] ?? img.currentSrc ?? img.src;
+			};
 			const open = () => {
-				big.src = img.currentSrc || img.src;
+				big.src = biggest();
 				big.alt = img.alt;
 				caption.textContent = img.alt;
 				viewer.showModal();

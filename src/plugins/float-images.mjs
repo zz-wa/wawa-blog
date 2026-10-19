@@ -60,6 +60,15 @@ export const floatImages = () => {
 				const floated = clone(node);
 				floated.properties.className = [...(floated.properties.className ?? []), 'float-img'];
 				floated.properties.style = `--tilt: ${look.tilt}deg; --drop: ${look.drop}px; --shift: ${look.shift}px`;
+				// Pictures show about 240px wide on the page, so generate small versions and let the
+				// browser pick; the biggest one is what the click-to-enlarge viewer shows.
+				// (Astro hands these attributes to its image optimiser.)
+				const img = floated.children.find((c) => isElement(c, 'img'));
+				if (img) {
+					img.properties.widths = ['240', '480', '800'];
+					img.properties.sizes = '240px';
+					img.properties.width = 480;
+				}
 
 				if (isElement(previous, 'p') && !isImageParagraph(previous)) {
 					ctx.removeNode(node);

@@ -1,0 +1,424 @@
+---
+// 结绳记事：便利贴挂在一条弯曲的细麻绳上，按日期从新到旧。
+// 绳子的走向和球钉的位置来自 src/data/rope.json（用 /admin/rope.html 编辑、导出），
+// 绳子在构建时算好（src/lib/rope.ts，和编辑页同一套算法），输出成 <path>，浏览器里不再计算。
+//
+// 两套布局，用 CSS 在 600px 处切换（另一套是 display:none，不会被读屏软件读到）：
+//   wide：配置里的蛇形绳子，700 宽的画布
+//   tall：手机用，一条竖直、轻微弯曲的绳子（320 宽的画布），便利贴交替挂在绳子左右两侧；
+//         起伏用同样的算法、同样的种子，球钉颜色、日期都和 wide 一致
+//
+// 每套的结构：
+//   一个 .rope 容器，比例和画布一致，宽度 100% 自适应
+//   ├─ <svg>  绳子（装饰，aria-hidden）
+//   ├─ <ol>   文章，DOM 里就是一个按日期排好的普通列表；每张便利贴整张是链接
+//   └─ <svg>  球钉和日期（装饰，aria-hidden），在便利贴上面，所以球钉压在便利贴上沿
+// 便利贴和字号都用“画布单位”（容器宽度 / 画布宽度）缩放，和 SVG 里的绳子等比。
+import { getImage, Image } from 'astro:assets';
+import ropeData from '../data/rope.json';
+import {
+	buildRope,
+	frayPaths,
+	pointAt,
+	ropePathD,
+	twistDash,
+	type RopeConfig,
+	type RopeSamples,
+} from '../lib/rope';
+import { excerpt, formatDate, isoDate, plainText, type Post, pictureFor, postHref, seeded } from '../utils';
+
+interface Props {
+	/** 这一页的文章，从新到旧；最多挂 rope.json 里球钉的数量 */
+	posts: Post[];
+}
+
+const { posts } = Astro.props;
+const cfg = ropeData as unknown as RopeConfig;
+
+// 没有标题、不超过这个字数的碎碎念，完整显示；再长的像有标题的一样，显示开头约 40 个字
+const SHORT_NOTE = 60;
+const KINDS = ['yellow', 'peach', 'cream'] as const;
+const WIDTHS = [124, 136, 148];
+// 球钉压在便利贴上沿：便利贴的上沿在球钉中心下面 5 个单位（和编辑页一致）
+const HANG = 12; // 球钉换成了小蝴蝶（高约 30），文字要放低一点，不压住蝴蝶
+
+const shown = posts.slice(0, cfg.beads.length);
+
+// ---- 手机用的竖直绳子 ----
+const TALL_W = 320;
+const TALL_STEP = 170; // 相邻两张便利贴之间的竖直间距：比一张便利贴还高，日期才不会压在上一张上
+const TALL_TOP = 100;
+const tallH = TALL_TOP + shown.length * TALL_STEP + 20;
+// “—— 结绳记事”写在绳子开头的上面（画布坐标）
+const LEAD = { wide: { x: 30, y: 98 }, tall: { x: 24, y: 28 } };
+const tallPoints: [number, number][] = [];
+for (let k = 0; k <= shown.length * 2; k++) {
+	const y = 70 + (k * (tallH - 90)) / (shown.length * 2);
+	// 轻微地左右弯：两头收住，中间左右各 ±11
+	const lean = k === 0 || k === shown.length * 2 ? 0.2 : 1;
+	tallPoints.push([TALL_W / 2 + (k % 2 === 0 ? -11 : 11) * lean, y]);
+}
+const tallCfg = { ...cfg, width: TALL_W, height: tallH, points: tallPoints };
+const tallSamples = buildRope(tallCfg);
+
+/** 绳子上离 (x, y) 最近的位置（用来把竖直绳子上的球钉放在想要的高度） */
+function nearestS(samples: RopeSamples, y: number): number {
+	let best = 0;
+	let bestD = Infinity;
+	samples.pts.forEach((pt, i) => {
+		const dd = Math.abs(pt.y - y);
+		if (dd < bestD) {
+			bestD = dd;
+			best = i;
+		}
+	});
+	return samples.cum[best] / samples.total;
+}
+
+const pct = (n: number) => n.toFixed(3);
+
+function makeVariant(id: 'wide' | 'tall') {
+	const tall = id === 'tall';
+	const W = tall ? TALL_W : cfg.width;
+	const H = tall ? tallH : cfg.height;
+	const samples = tall ? tallSamples : buildRope(cfg);
+	const items = shown.map((post, i) => {
+		const bead = tall
+			? { s: nearestS(samples, TALL_TOP + 20 + i * TALL_STEP), color: cfg.beads[i].color }
+			: cfg.beads[i];
+		const p = pointAt(samples, bead.s);
+		// 宽度和倾斜按文章 id 固定，每次刷新、每次构建都一样
+		const width = WIDTHS[Math.floor(seeded(post.id, 'w') * WIDTHS.length)];
+		const rot = (seeded(post.id, 'r') - 0.5) * 11; // ±5.5°
+		const { title, author, date } = post.data;
+		const full = plainText(post);
+		const text = title || full.length > SHORT_NOTE ? excerpt(post, 40) : full;
+		// wide：球钉在便利贴上沿正中。tall：偶数张挂在绳子左边、奇数张挂在右边，球钉压在靠绳子那一侧的上角
+		const left = tall ? (i % 2 === 0 ? p.x - 3 - width : p.x + 3) : p.x - width / 2;
+		const originX = ((p.x - left) / width) * 100;
+		return {
+			post,
+			picture: pictureFor(post),
+			href: postHref(post),
+			title,
+			author,
+			text,
+			date,
+			kind: KINDS[i % KINDS.length],
+			bead,
+			p,
+			left: pct((left / W) * 100),
+			top: pct(((p.y + HANG) / H) * 100),
+			width: pct((width / W) * 100),
+			rot: rot.toFixed(1),
+			originX: originX.toFixed(2),
+		};
+	});
+	return { id, W, H, lead: LEAD[id], d: ropePathD(samples), frays: frayPaths(samples), items };
+}
+
+const variants = [makeVariant('wide'), makeVariant('tall')];
+// 绳子上的“球钉”：一只只不同的小蝴蝶（src/assets/butterflies/b1..b9.png，已经统一成薄荷色 #35C8B4），
+// 按顺序一条文章一只，用完了从头再来
+const butterflyFiles = import.meta.glob<ImageMetadata>('../assets/butterflies/*.png', { eager: true, import: 'default' });
+const butterflies = await Promise.all(
+	Object.keys(butterflyFiles)
+		.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+		.map(async (k) => {
+			const meta = butterflyFiles[k];
+			const img = await getImage({ src: meta, width: 120, format: 'webp' });
+			const size = 22; // 画布单位，长的那一边
+			const scale = size / Math.max(meta.width, meta.height);
+			return { src: img.src, w: meta.width * scale, h: meta.height * scale };
+		}),
+);
+// 绳子画得很细（不跟 rope.json 的 thickness 走）
+const ROPE_W = 1;
+---
+
+{
+	variants.map((v) => (
+		<div
+			class={`rope rope--${v.id}`}
+			style={`--rope-light:${cfg.ropeColor}; --cw:${v.W}; aspect-ratio:${v.W}/${v.H}`}
+		>
+			<div class="lead" aria-hidden="true" style={`left:${pct((v.lead.x / v.W) * 100)}%; top:${pct((v.lead.y / v.H) * 100)}%`}><span class="perch" data-perch /></div>
+			<svg class="layer" viewBox={`0 0 ${v.W} ${v.H}`} aria-hidden="true" focusable="false">
+				<path class="line" d={v.d} fill="none" stroke-width={ROPE_W} stroke-linecap="round" stroke-linejoin="round" />
+				{false && (
+					<path
+						class="twist"
+						d={v.d}
+						fill="none"
+						stroke-width={cfg.thickness}
+						stroke-dasharray={twistDash(cfg.thickness)}
+						opacity=".55"
+					/>
+				)}
+				{v.frays.map((fd) => (
+					<path class="line" d={fd} fill="none" stroke-width={0.6} stroke-linecap="round" />
+				))}
+			</svg>
+
+			<ol class="notes" aria-label="文章，按日期从新到旧">
+				{v.items.map((it) => (
+					<li
+						class="slot"
+						style={`left:${it.left}%; top:${it.top}%; width:${it.width}%; --rot:${it.rot}deg; --ox:${it.originX}%`}
+					>
+						<a class={`note k-${it.kind}`} href={it.href}>
+							<time class="sr-only" datetime={isoDate(it.date)}>
+								{formatDate(it.date)}
+							</time>
+							{it.title && <h3 class="nt">{it.title}</h3>}
+							<p class="ne">{it.text}</p>
+							{it.author && <p class="na">—— {it.author}</p>}
+							{it.picture && <Image class="thumb" src={it.picture} width={160} height={160} densities={[1, 2]} alt="" />}
+						</a>
+					</li>
+				))}
+			</ol>
+
+			<svg class="layer pins" viewBox={`0 0 ${v.W} ${v.H}`} aria-hidden="true" focusable="false">
+				{v.items.map((it, n) => {
+					const bf = butterflies[n % butterflies.length];
+					const tilt = ((seeded(it.href, 'tilt') - 0.5) * 24).toFixed(1);
+					return (
+						<g>
+							<mask id={`bm-${v.id}-${n}`} maskUnits="userSpaceOnUse" style="mask-type:alpha" x={(it.p.x - bf.w / 2).toFixed(1)} y={(it.p.y - bf.h / 2).toFixed(1)} width={bf.w.toFixed(1)} height={bf.h.toFixed(1)}>
+								<image
+									href={bf.src}
+									x={(it.p.x - bf.w / 2).toFixed(1)}
+									y={(it.p.y - bf.h / 2).toFixed(1)}
+									width={bf.w.toFixed(1)}
+									height={bf.h.toFixed(1)}
+								/>
+							</mask>
+							{/* 颜色在这里：用蝴蝶的形状当模子，填上 --bf0 … --bf8（见下面的 .rope 样式） */}
+							<rect
+								class="bf-shape"
+								style={`fill: var(--bf${n % 9})`}
+								mask={`url(#bm-${v.id}-${n})`}
+								x={(it.p.x - bf.w / 2).toFixed(1)}
+								y={(it.p.y - bf.h / 2).toFixed(1)}
+								width={bf.w.toFixed(1)}
+								height={bf.h.toFixed(1)}
+								transform={`rotate(${tilt} ${it.p.x.toFixed(1)} ${it.p.y.toFixed(1)})`}
+							/>
+							<text class="date" x={it.p.x.toFixed(1)} y={(it.p.y - 17).toFixed(1)} text-anchor="middle">
+								{formatDate(it.date)}
+							</text>
+						</g>
+					);
+				})}
+			</svg>
+		</div>
+	))
+}
+
+<style>
+	.rope {
+		position: relative;
+		width: 100%;
+		container-type: inline-size;
+		/* 叠在标题区上面的部分不挡点击，只有便利贴能点 */
+		pointer-events: none;
+		--rope: var(--rope-light);
+		/* 小蝴蝶的颜色：九只各一个，要换颜色就改这里（现在九只都是嫩绿 #9AD66F） */
+		--bf0: #9ad66f;
+		--bf1: #9ad66f;
+		--bf2: #9ad66f;
+		--bf3: #9ad66f;
+		--bf4: #9ad66f;
+		--bf5: #9ad66f;
+		--bf6: #9ad66f;
+		--bf7: #9ad66f;
+		--bf8: #9ad66f;
+	}
+
+	/* 夜里绳子和线头都改成浅麻色（纹理虚线用 --rope-twist 的夜间色） */
+	@media (prefers-color-scheme: dark) {
+		.rope {
+			--rope: var(--rope-dark);
+		}
+	}
+
+	/* 宽屏版：画布最上面 100 个单位是留给标题区的空白（“—— 结绳记事”写在里面），让绳子往上叠进标题区
+	   （百分比的外边距按父元素的宽度算，所以和画布等比） */
+	.rope--wide {
+		margin-top: calc(-100 / 700 * 100%);
+	}
+
+	/* 手机版：小于 600px 时换成竖直的绳子，宽屏版整个藏起来（display:none 读屏软件也读不到） */
+	.rope--tall {
+		display: none;
+	}
+
+	@media (max-width: 599.98px) {
+		.rope--wide {
+			display: none;
+		}
+
+		.rope--tall {
+			display: block;
+		}
+	}
+
+	.layer {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+	}
+
+	.lead {
+		/* 画布单位也要在这里定义：.lead 不在 .notes 里面，用不到那边的变量 */
+		--u: calc(100cqw / var(--cw));
+		position: absolute;
+		margin: 0;
+		font-family: var(--font-hand);
+		/* “—— 结绳记事”的字删掉了，这块空地留着给蝴蝶的落脚点定位 */
+		height: calc(var(--u) * 24);
+		/* 在标题区上面写字，不挡点击 */
+		pointer-events: none;
+	}
+
+	/* 蝴蝶的落脚点：停在“—— 结绳记事”这行字的右边（不是在字上） */
+	.perch {
+		position: absolute;
+		left: 100%;
+		/* 比这行字的中线高一些：蝴蝶有一百多像素高，太低的话下半截会碰到下面第一排的日期 */
+		top: -60%;
+		margin-left: calc(var(--u) * 50);
+		width: 8px;
+		height: 8px;
+	}
+
+	.line {
+		stroke: var(--rope);
+	}
+
+	.twist {
+		stroke: var(--rope-twist);
+	}
+
+	.date {
+		font-family: var(--font-hand);
+		font-size: 13px;
+		fill: var(--ink-faint);
+		/* 日期有时会压在绳子上：描一圈和背景同色的边，保证读得清 */
+		paint-order: stroke;
+		stroke: var(--bg);
+		stroke-width: 3.5px;
+		stroke-linejoin: round;
+	}
+
+	.notes {
+		/* 一个画布单位 = 容器宽度 / 画布宽度（--cw：宽屏版 700，手机版 320）。字号、间距都用它，和 SVG 等比缩放 */
+		--u: calc(100cqw / var(--cw));
+		position: absolute;
+		inset: 0;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.slot {
+		position: absolute;
+		pointer-events: auto;
+		/* 绕上沿转（和编辑页一致）：宽屏版绕上沿正中（50%），手机版绕靠绳子那一侧的上角 */
+		transform-origin: var(--ox, 50%) 0;
+		transform: none;
+		transition: transform 0.18s ease;
+	}
+
+	.slot:hover,
+	.slot:focus-within {
+		transform: translateY(-2px);
+	}
+
+	.note {
+		display: block;
+		/* 只有文字：没有便利贴纸，留一小块区域放字 */
+		padding: calc(var(--u) * 6) calc(var(--u) * 7);
+		/* 字外面描一圈和页面同色的边：绳子拐弯经过时，不会划在字上，也不会把绳子整段盖断 */
+		text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 5px var(--bg), 0 0 5px var(--bg);
+		color: var(--ink);
+		text-decoration: none;
+		font-family: var(--font-hand);
+	}
+
+	.note:hover .nt,
+	.note:hover .ne {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+	}
+
+	.note:focus-visible {
+		outline: 2px solid var(--link);
+		outline-offset: 3px;
+	}
+
+	/* 文章带的照片：宽屏在文字的右边，小小的一张；手机上没有地方放在旁边，放在文字下面 */
+	.thumb {
+		display: block;
+		object-fit: cover;
+		border-radius: calc(var(--u) * 2);
+		box-shadow: 0 1px 5px rgb(0 0 0 / 0.2);
+	}
+
+	.rope--wide .thumb {
+		position: absolute;
+		left: 100%;
+		top: calc(var(--u) * 6);
+		width: calc(var(--u) * 44);
+		height: calc(var(--u) * 44);
+		rotate: 3deg;
+	}
+
+	.rope--tall .thumb {
+		width: calc(var(--u) * 64);
+		height: calc(var(--u) * 64);
+		margin-top: calc(var(--u) * 8);
+	}
+
+	.nt {
+		margin: 0 0 calc(var(--u) * 7);
+		font-size: calc(var(--u) * 15);
+		line-height: calc(var(--u) * 19);
+		font-weight: 400;
+		color: var(--ink);
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+	}
+
+	.ne {
+		margin: 0;
+		font-size: calc(var(--u) * 12.5);
+		line-height: calc(var(--u) * 16);
+		color: var(--ink-soft, var(--ink));
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 5;
+		overflow: hidden;
+	}
+
+	.na {
+		margin: calc(var(--u) * 5) 0 0;
+		font-size: calc(var(--u) * 12);
+		line-height: calc(var(--u) * 15);
+		text-align: right;
+		color: var(--ink-faint);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.slot {
+			transition: none;
+		}
+	}
+</style>

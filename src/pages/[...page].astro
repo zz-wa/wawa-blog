@@ -1,0 +1,312 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import butterflyBlueMint from '../assets/deco/butterfly-blue-mint.png';
+import butterflyLine from '../assets/deco/butterfly-line.png';
+import butterflyNavy from '../assets/deco/butterfly-navy.png';
+import FlyingButterfly from '../components/FlyingButterfly.astro';
+import Petals from '../components/Petals.astro';
+import RopeTimeline from '../components/RopeTimeline.astro';
+import SideQuote from '../components/SideQuote.astro';
+import SiteTitle from '../components/SiteTitle.astro';
+import Sparkles from '../components/Sparkles.astro';
+import { GREETING, INTRO, NOW, STANDALONE_POST } from '../consts';
+import ropeData from '../data/rope.json';
+import Base from '../layouts/Base.astro';
+import { byDateDesc } from '../utils';
+
+// 一根绳子挂 rope.json 里球钉那么多张便利贴（现在是 9 张）。
+// 文章多了，更早的放到下一页（/2/、/3/ …），用同一根绳子。
+export const getStaticPaths = (async ({ paginate }) => {
+	// 单独放的那一条不挂在绳子上
+	const posts = (await getCollection('posts')).filter((p) => p.id !== STANDALONE_POST).sort(byDateDesc);
+	return paginate(posts, { pageSize: ropeData.beads.length });
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const standalone = (await getCollection('posts')).find((p) => p.id === STANDALONE_POST);
+---
+
+<Base home>
+	<div class="hero">
+		<Petals />
+		<Sparkles
+			stars={[
+				[44, 22, 16, 'yellow', 'star'],
+				[52, 60, 10, 'mint', 'star'],
+				[58, 30, 12, 'lilac', 'ring'],
+				[70, 70, 8, 'pink', 'dot'],
+				[8, 82, 12, 'blue', 'star'],
+			]}
+		/>
+		<header class="hero-inner">
+			{standalone && page.currentPage === 1 && <SideQuote post={standalone} where="top" />}
+			<div class="greeting">
+				<h1 class="title-wrap">
+					<SiteTitle />
+					<Image class="bf bf-title" src={butterflyLine} width={80} densities={[1, 2]} alt="" />
+					<span class="perch perch-title" data-perch aria-hidden="true"></span>
+				</h1>
+				<p class="hello">{GREETING}</p>
+				<p class="intro">{INTRO}</p>
+			</div>
+
+			<!-- 右上角：“最近在读”只有字（没有便利贴），旁边一只蝴蝶；蝴蝶的落脚点在右下 -->
+			<div class="cloud-wrap">
+				<aside class="now">
+					<p class="now-label">{NOW.label}</p>
+					<p class="now-text">{NOW.text}</p>
+				</aside>
+				<Image class="bf bf-navy" src={butterflyNavy} width={66} densities={[1, 2]} alt="" />
+				<span class="perch-cloud" data-perch aria-hidden="true"></span>
+				<FlyingButterfly />
+			</div>
+		</header>
+	</div>
+
+	<main class="rope-wrap">
+		<Sparkles
+			stars={[
+				[2, 4, 18, 'yellow', 'star'],
+				[30, 1, 10, 'mint', 'star'],
+				[47, 62, 14, 'lilac', 'star'],
+				[63, 3, 8, 'pink', 'dot'],
+				[88, 70, 16, 'blue', 'star'],
+				[12, 88, 12, 'mint', 'ring'],
+				[74, 40, 9, 'yellow', 'dot'],
+				[96, 30, 12, 'pink', 'star'],
+			]}
+		/>
+		<Image class="bf bf-corner" src={butterflyBlueMint} width={76} densities={[1, 2]} alt="" />
+		<span class="perch perch-side perch-l1" data-perch aria-hidden="true"></span>
+		<span class="perch perch-side perch-l2" data-perch aria-hidden="true"></span>
+		<span class="perch perch-side perch-r1" data-perch aria-hidden="true"></span>
+		<span class="perch perch-side perch-r2" data-perch aria-hidden="true"></span>
+		<RopeTimeline posts={page.data} />
+		{standalone && page.currentPage === 1 && <SideQuote post={standalone} where="bottom" />}
+		{
+			(page.url.prev || page.url.next) && (
+				<nav class="pager" aria-label="翻页">
+					{page.url.next ? <a href={page.url.next}>← 更早的</a> : <span />}
+					{page.url.prev ? <a href={page.url.prev}>更新的 →</a> : <span />}
+				</nav>
+			)
+		}
+	</main>
+</Base>
+
+<style>
+	.hero {
+		position: relative;
+	}
+
+	.hero-inner {
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 32px 48px;
+		max-width: var(--home-width);
+		margin: 0 auto;
+		padding: 64px 24px 32px;
+	}
+
+	h1 {
+		margin: 0 0 18px;
+		line-height: 0;
+	}
+
+	.hello {
+		margin: 0 0 4px;
+		font-size: 1.2rem;
+	}
+
+	.intro {
+		margin: 0;
+		color: var(--ink-soft);
+	}
+
+	.cloud-wrap {
+		position: relative;
+		flex: none;
+		align-self: flex-start;
+		margin-top: -8px;
+		width: min(300px, 78vw);
+		aspect-ratio: 360 / 250;
+	}
+
+	@media (max-width: 600px) {
+		.cloud-wrap {
+			aspect-ratio: auto;
+			height: 90px;
+		}
+	}
+
+	.perch-cloud {
+		position: absolute;
+		right: -4%;
+		bottom: -20%;
+		width: 8px;
+		height: 8px;
+	}
+
+	.greeting {
+		position: relative;
+	}
+
+	/* 右上角的“最近在读”：只有字，靠右，蝴蝶在它右边 */
+	.now {
+		padding: 28px 70px 0 0;
+		text-align: right;
+		font-family: var(--font-hand);
+		font-size: 1.5rem;
+		color: var(--ink);
+	}
+
+	.now-label {
+		margin: 0 0 2px;
+		font-family: var(--font-ui);
+		font-size: 0.88rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--ink-faint);
+	}
+
+	.now-text {
+		margin: 0;
+	}
+
+	/* 首页是一整根绳子，头部和绳子用同一个宽度 */
+	.hero,
+	.rope-wrap {
+		--home-width: min(960px, 100%);
+	}
+
+	/* Hand-drawn butterflies: one resting on the title, one over the wall's top-right corner */
+	.title-wrap {
+		position: relative;
+		display: inline-block;
+	}
+
+	/* Butterflies (illustration: DayDay爱画画, used with permission) — decoration only */
+	.bf {
+		position: absolute;
+		height: auto;
+		pointer-events: none;
+		user-select: none;
+	}
+
+	.bf-title {
+		top: -30px;
+		right: -86px;
+		width: 80px;
+		rotate: 10deg;
+	}
+
+
+	/* 停在“最近在读”便利贴的右边（那里是空的）；放在左上会压到上面的简介文字 */
+	.bf-navy {
+		top: 8px;
+		right: 0;
+		left: auto;
+		width: 66px;
+		rotate: -14deg;
+		z-index: 4;
+	}
+
+	.bf-corner {
+		bottom: 24px;
+		left: 6px;
+		width: 76px;
+		rotate: 14deg;
+		z-index: 4;
+	}
+
+	/* the line drawing is dark ink: lighten it on the dark moss background */
+	@media (prefers-color-scheme: dark) {
+		.bf-title {
+			filter: invert(0.9) sepia(0.2);
+		}
+	}
+
+
+	.rope-wrap {
+		position: relative;
+		max-width: var(--home-width);
+		margin: 0 auto;
+		padding: 24px 24px 96px;
+	}
+
+	/* 蝴蝶的落脚点：不可见的小元素，只放在不会盖住字的地方（见 FlyingButterfly.astro）。
+	   位置：标题旁边、右上角的空地旁边、“结绳记事”旁边（RopeTimeline）、页面左右两侧的空白处 */
+	.perch {
+		position: absolute;
+		width: 8px;
+		height: 8px;
+		pointer-events: none;
+	}
+
+	.perch-title {
+		left: 100%;
+		top: 50%;
+		margin-left: 70px;
+	}
+
+	/* 两侧的空白只有宽屏才有（内容栏 960px 居中，两边留出来），窄屏上整个不存在 */
+	.perch-side {
+		display: none;
+	}
+
+	@media (min-width: 1320px) {
+		/* 右边的空白让给照片墙，蝴蝶不停在那里 */
+		.perch-r1,
+		.perch-r2 {
+			display: none !important;
+		}
+	}
+
+	@media (min-width: 1180px) {
+		.perch-side {
+			display: block;
+		}
+
+		.perch-l1,
+		.perch-l2 {
+			right: 100%;
+			margin-right: 40px;
+		}
+
+		.perch-r1,
+		.perch-r2 {
+			left: 100%;
+			margin-left: 40px;
+		}
+
+		.perch-l1,
+		.perch-r1 {
+			top: 28%;
+		}
+
+		.perch-l2,
+		.perch-r2 {
+			top: 62%;
+		}
+	}
+
+	.pager {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+		margin-top: 48px;
+		font-size: 0.95rem;
+	}
+
+	@media (max-width: 600px) {
+		.hero-inner {
+			padding-top: 44px;
+		}
+
+	}
+</style>

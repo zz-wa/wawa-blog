@@ -1,9 +1,11 @@
 ---
 // 完整文章页：有标题的长碎碎念和读书都用这个。安静的书页，不放贴纸和动画。
 import { render } from 'astro:content';
+import { Image } from 'astro:assets';
 import ImageViewer from '../components/ImageViewer.astro';
 import Whisper from '../components/Whisper.astro';
-import { excerpt, formatDate, type Post } from '../utils';
+import { excerpt, formatDate, isoDate, ogImageFor, type Post } from '../utils';
+import { SITE_TITLE } from '../consts';
 import Base from './Base.astro';
 
 interface Props {
@@ -18,7 +20,12 @@ const heading = title ?? (book ? `《${book}》` : undefined);
 const pageTitle = heading ?? (post.data.type === 'reading' ? '读书' : '碎碎念');
 ---
 
-<Base title={pageTitle} description={excerpt(post, 60)}>
+<Base
+	title={pageTitle}
+	description={excerpt(post, 60)}
+	image={await ogImageFor(post)}
+	article={{ publishedTime: isoDate(date), headline: pageTitle, author: SITE_TITLE }}
+>
 	<main>
 		<article>
 			<header class="head">
@@ -35,7 +42,13 @@ const pageTitle = heading ?? (post.data.type === 'reading' ? '读书' : '碎碎�
 				{
 					post.data.cover && (
 						<p class="float-img" style="--tilt: -2.6deg; --drop: 0px; --shift: 24px">
-							<img src={post.data.cover} alt="" />
+							<Image
+								src={post.data.cover}
+								width={480}
+								widths={[240, 480, 1200]}
+								sizes="240px"
+								alt={post.data.coverAlt ?? ''}
+							/>
 						</p>
 					)
 				}

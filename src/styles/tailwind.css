@@ -1,0 +1,9 @@
+/* Tailwind：只引主题和工具类（utilities），不引 preflight——
+   全站的重置和版式已经在 global.css 里，再重置一遍会把现有的样子改掉。
+   source(none) = 不自动扫整个项目（会把注释和 CSS 里的 grid、border 之类的词也生成成多余的类）；
+   只扫下面 @source 列出来的文件。哪个组件开始用工具类，就把它加到这里。 */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+
+/* 现在还没有组件在用工具类。要用的话，把文件写在下面，例如：
+   @source '../components/Xxx.astro'; */

@@ -1,22 +1,33 @@
 ---
+import { Image } from 'astro:assets';
+import butterfly from '../assets/deco/butterfly-blue-pink.png';
 import BaseHead from '../components/BaseHead.astro';
 import SiteTitle from '../components/SiteTitle.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from '../consts';
 
 interface Props {
 	title?: string;
 	description?: string;
 	/** The home page shows the big title itself, so it hides the small one. */
 	home?: boolean;
+	/** Share picture for this page (site-root path); defaults to /og.png. */
+	image?: string;
+	/** Article pages pass this so the share info says "article" and carries the date. */
+	article?: { publishedTime: string; headline: string; author: string };
 }
 
-const { title, description = SITE_DESCRIPTION, home = false } = Astro.props;
+const { title, description = SITE_DESCRIPTION, home = false, image, article } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={title ? `${title} | ${SITE_TITLE}` : SITE_TITLE} description={description} />
+		<BaseHead
+			title={title ? `${title} | ${SITE_TITLE}` : SITE_NAME}
+			description={description}
+			image={image}
+			article={article}
+		/>
 	</head>
 	<body>
 		{
@@ -32,10 +43,23 @@ const { title, description = SITE_DESCRIPTION, home = false } = Astro.props;
 			!home && (
 				// the colourful butterfly from the home page, landed in the top-right corner
 				// (illustration: DayDay爱画画, used with permission)
-				<img class="corner-butterfly" src="/images/deco/butterfly-blue-pink.png" alt="" aria-hidden="true" />
+				<Image class="corner-butterfly" src={butterfly} width={92} densities={[1, 2]} alt="" aria-hidden="true" />
 			)
 		}
 		<slot />
+		<script>
+			// Lenis：滚动时多一点缓动。系统开了“减少动态效果”就不启用，保持浏览器原来的滚动。
+			// 等页面空闲了再加载，不抢首屏；autoRaf 自己管动画帧（标签页切到后台时浏览器会自动暂停）。
+			if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				const start = async () => {
+					const { default: Lenis } = await import('lenis');
+					await import('lenis/dist/lenis.css');
+					new Lenis({ autoRaf: true });
+				};
+				if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 1500 });
+				else setTimeout(start, 300);
+			}
+		</script>
 	</body>
 </html>
 

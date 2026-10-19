@@ -1,19 +1,22 @@
 ---
+import { Image } from 'astro:assets';
+import butterfly from '../assets/deco/butterfly-blue-pink.png';
 // 首页的彩色蝴蝶：慢慢地在页面上飞来飞去，扇着翅膀，偶尔停下来歇一会儿。
-// 系统开启“减少动态效果”时不飞，就停在墙的右上角。
+// 系统开启“减少动态效果”时不飞，就停在首页右上角的空地旁边。
 // 插画来源：DayDay爱画画（已获授权使用）
 ---
 
 <span class="flyer" aria-hidden="true">
-	<img src="/images/deco/butterfly-blue-pink.png" alt="" />
+	<Image src={butterfly} width={104} densities={[1, 2]} alt="" />
 </span>
 
 <style>
 	/* Resting spot (and the no-motion fallback): top-right of the wall */
 	.flyer {
 		position: absolute;
-		top: -40px;
-		right: 3%;
+		/* 停在右上角空地的右下（右边缘对齐，任何屏幕宽度下都不会伸出屏幕） */
+		right: 0;
+		bottom: -58%;
 		z-index: 6;
 		width: 104px;
 		rotate: -8deg;
@@ -21,7 +24,7 @@
 		user-select: none;
 	}
 
-	.flyer img {
+	.flyer :global(img) {
 		display: block;
 		width: 100%;
 		height: auto;
@@ -29,21 +32,43 @@
 	}
 
 	/* Once the script takes over it flies over the whole page */
+
+	/* 手机上小一点，不占屏幕四分之一 */
+	@media (width <= 600px) {
+		.flyer {
+			width: 64px;
+		}
+	}
+
 	.flyer.flying {
 		position: fixed;
 		top: 0;
 		left: 0;
 		right: auto;
+		/* 停靠时用的是 bottom；飞起来后必须清掉，不然盒子会被 top 和 bottom 拉成整屏那么高 */
+		bottom: auto;
+		/* 飞起来之后在所有内容的后面飞：从便利贴、标题后面穿过，永远盖不住字、日期和球钉。
+		   （系统开启“减少动态效果”时不飞，静止停在云朵旁边，那时不用这个层级。） */
+		z-index: -1;
 		rotate: none;
 		will-change: transform;
 	}
 
-	.flyer.flying img {
+	/* 屏幕里没有落脚点的时候淡出（只动 opacity） */
+	.flyer.flying {
+		transition: opacity 0.4s ease;
+	}
+
+	.flyer.flying.away {
+		opacity: 0;
+	}
+
+	.flyer.flying :global(img) {
 		animation: flap 0.42s ease-in-out infinite alternate;
 	}
 
 	/* Resting: wings open and close slowly */
-	.flyer.flying.resting img {
+	.flyer.flying.resting :global(img) {
 		animation-duration: 1.6s;
 	}
 
@@ -57,36 +82,46 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.flyer.flying img {
+		.flyer.flying :global(img) {
 			animation: none;
 		}
 	}
 </style>
 
 <script>
+	// 蝴蝶只停在标了 data-perch 的落脚点上（标题旁边、“结绳记事”旁边、页面两侧的空白处），
+	// 绝不停在便利贴的字、日期或球钉上。落脚点是不可见的小元素，位置见各组件里的 .perch。
 	const flyer = document.querySelector<HTMLElement>('.flyer');
 	const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	if (flyer && !reduced) {
+		const size = () => flyer.offsetWidth || 104;
 		const start = flyer.getBoundingClientRect();
 		let x = start.left;
-		let y = Math.max(16, start.top);
-		let tx = x;
-		let ty = y;
+		let y = start.top;
+		let perch: HTMLElement | null = null;
 		let rest = 0;
 		let lean = 0;
 		let t = 0;
 		let last = performance.now();
 
-		const size = () => flyer.offsetWidth || 104;
-		const pickTarget = () => {
-			const m = 24;
-			tx = m + Math.random() * Math.max(0, window.innerWidth - size() - 2 * m);
-			ty = m + Math.random() * Math.max(0, window.innerHeight * 0.85 - size() - m);
+		/** 当前整个都在屏幕里的落脚点（不在屏幕里、或者被 display:none 的都不算） */
+		const visiblePerches = () =>
+			[...document.querySelectorAll<HTMLElement>('[data-perch]')].filter((el) => {
+				const r = el.getBoundingClientRect();
+				return r.width > 0 && r.top > 0 && r.bottom < window.innerHeight && r.left > 0 && r.right < window.innerWidth;
+			});
+		const pickPerch = (not: HTMLElement | null) => {
+			const spots = visiblePerches().filter((el) => el !== not);
+			return spots.length ? spots[Math.floor(Math.random() * spots.length)] : null;
+		};
+		/** 落脚点的中心，换算成蝴蝶左上角的位置（每一帧现算，所以页面滚动时蝴蝶跟着落脚点走） */
+		const spotOf = (el: HTMLElement): [number, number] => {
+			const r = el.getBoundingClientRect();
+			return [r.left + r.width / 2 - size() / 2, r.top + r.height / 2 - size() / 2];
 		};
 
 		flyer.classList.add('flying');
-		pickTarget();
 
 		const step = (now: number) => {
 			const dt = Math.min(0.05, (now - last) / 1000);
@@ -98,18 +133,37 @@
 				return;
 			}
 
+			// 现在的落脚点滚出屏幕了（或者还没有）：换一个；一个都没有就淡出，等它们回到屏幕里
+			if (!perch || !visiblePerches().includes(perch)) {
+				perch = pickPerch(perch);
+				if (!perch) {
+					flyer.classList.add('away');
+					requestAnimationFrame(step);
+					return;
+				}
+				rest = 0;
+			}
+			if (flyer.classList.contains('away')) {
+				// 重新出现的时候直接在新落脚点那里，不从旧位置飘过整个页面
+				[x, y] = spotOf(perch);
+				flyer.classList.remove('away');
+			}
+
+			const [tx, ty] = spotOf(perch);
 			if (rest > 0) {
 				rest -= dt;
 				flyer.classList.add('resting');
+				x = tx;
+				y = ty;
+				if (rest <= 0) perch = pickPerch(perch) ?? perch;
 			} else {
 				flyer.classList.remove('resting');
 				const dx = tx - x;
 				const dy = ty - y;
 				const d = Math.hypot(dx, dy);
 				if (d < 6) {
-					// sometimes settle for a few seconds before setting off again
-					if (Math.random() < 0.45) rest = 2 + Math.random() * 3;
-					pickTarget();
+					// 到了：在落脚点上歇几秒
+					rest = 2 + Math.random() * 3;
 				} else {
 					const speed = 60; // px per second: slow and drifting
 					x += (dx / d) * speed * dt + Math.sin(t * 2.3) * 0.7;

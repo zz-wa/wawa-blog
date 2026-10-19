@@ -5,7 +5,8 @@ import StickyNote from '../../components/StickyNote.astro';
 import Whisper from '../../components/Whisper.astro';
 import Article from '../../layouts/Article.astro';
 import Base from '../../layouts/Base.astro';
-import { byDateDesc, formatDate, type Post, wallLook } from '../../utils';
+import { SITE_TITLE } from '../../consts';
+import { byDateDesc, excerpt, formatDate, isoDate, ogImageFor, type Post, wallLook } from '../../utils';
 
 export async function getStaticPaths() {
 	const posts = (await getCollection('posts')).sort(byDateDesc);
@@ -24,7 +25,12 @@ const date = formatDate(post.data.date);
 ---
 
 {post.data.title ? <Article post={post} /> : (
-<Base title={`碎碎念 ${date}`}>
+<Base
+	title={`碎碎念 ${date}`}
+	description={excerpt(post, 60)}
+	image={await ogImageFor(post)}
+	article={{ publishedTime: isoDate(post.data.date), headline: `碎碎念 ${date}`, author: SITE_TITLE }}
+>
 	<main>
 		<StickyNote
 			as="article"
