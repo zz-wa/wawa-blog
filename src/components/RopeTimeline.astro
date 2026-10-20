@@ -42,7 +42,13 @@ const WIDTHS = [136, 150, 164];
 // 球钉压在便利贴上沿：便利贴的上沿在球钉中心下面 5 个单位（和编辑页一致）
 const HANG = 12; // 球钉换成了小蝴蝶（高约 30），文字要放低一点，不压住蝴蝶
 
-const shown = posts.slice(0, cfg.beads.length);
+// 所有文章都挂：一圈绳子挂 rope.json 里球钉那么多张，挂满了就接着再开一圈（不分页，不漏文章）
+const shown = posts;
+const PER = cfg.beads.length;
+// 下一圈的画布往上靠这么多（画布单位），两圈之间的空隙就小这么多；CSS 里的 margin-top 用同一个数
+const NEXT_PULL = 130;
+const chunks: Post[][] = [];
+for (let i = 0; i < shown.length; i += PER) chunks.push(shown.slice(i, i + PER));
 
 // ---- 手机用的竖直绳子 ----
 const TALL_W = 320;
@@ -77,14 +83,28 @@ function nearestS(samples: RopeSamples, y: number): number {
 
 const pct = (n: number) => n.toFixed(3);
 
-function makeVariant(id: 'wide' | 'tall') {
+/** 只留绳子走到最后一个球钉再多一小段，最后一圈挂得少时，后面不拖一大截空绳子 */
+function trim(samples: RopeSamples, lastS: number): RopeSamples {
+	const limit = Math.min(samples.total, lastS * samples.total + 70);
+	let end = samples.cum.findIndex((c) => c >= limit);
+	if (end < 0) end = samples.cum.length - 1;
+	end = Math.max(end, 8);
+	return { pts: samples.pts.slice(0, end + 1), cum: samples.cum.slice(0, end + 1), total: samples.cum[end] };
+}
+
+/** 第 k 圈的绳子：单数圈（第 2、4 圈…）左右翻转，绳子从上一圈绳尾所在的那边接着往回走，不用绕到另一边去 */
+const ropeFor = (k: number): RopeSamples =>
+	buildRope(k % 2 === 1 ? { ...cfg, points: cfg.points.map(([x, y]) => [cfg.width - x, y] as [number, number]) } : cfg);
+
+function makeVariant(id: 'wide' | 'tall', list: Post[] = shown, k = 0) {
 	const tall = id === 'tall';
 	const W = tall ? TALL_W : cfg.width;
-	const H = tall ? tallH : cfg.height;
-	const samples = tall ? tallSamples : buildRope(cfg);
-	const items = shown.map((post, i) => {
+	const samples = tall ? tallSamples : ropeFor(k); // 球钉的位置按完整的绳子算
+	const drawn = !tall && list.length < PER ? trim(samples, cfg.beads[list.length - 1].s) : samples; // 画出来的绳子，最后一圈只画到最后一个球钉再多一小段
+	const H = tall ? tallH : list.length < PER ? Math.ceil(Math.max(...drawn.pts.map((q) => q.y)) + 70) : cfg.height;
+	const items = list.map((post, i) => {
 		const bead = tall
-			? { s: nearestS(samples, TALL_TOP + 20 + i * TALL_STEP), color: cfg.beads[i].color }
+			? { s: nearestS(samples, TALL_TOP + 20 + i * TALL_STEP), color: cfg.beads[i % PER].color }
 			: cfg.beads[i];
 		const p = pointAt(samples, bead.s);
 		// 宽度和倾斜按文章 id 固定，每次刷新、每次构建都一样
@@ -104,7 +124,8 @@ function makeVariant(id: 'wide' | 'tall') {
 			author,
 			text,
 			date,
-			kind: KINDS[i % KINDS.length],
+			kind: KINDS[(k * PER + i) % KINDS.length],
+			n: k * PER + i,
 			bead,
 			p,
 			left: pct((left / W) * 100),
@@ -114,10 +135,41 @@ function makeVariant(id: 'wide' | 'tall') {
 			originX: originX.toFixed(2),
 		};
 	});
-	return { id, W, H, lead: LEAD[id], d: ropePathD(samples), frays: frayPaths(samples), items };
+	// 一圈接一圈：这一圈的绳尾，用一条曲线连到下一圈的绳头（下一圈的画布紧接在这一圈下面）
+	let join = '';
+	const hasNext = !tall && k < chunks.length - 1;
+	if (hasNext) {
+		const P = drawn.pts;
+		const e = P[P.length - 1];
+		const eDir = { x: e.x - P[P.length - 4].x, y: e.y - P[P.length - 4].y };
+		const eLen = Math.hypot(eDir.x, eDir.y) || 1;
+		const dir = eDir.x > 0 ? 1 : -1;
+		const next = ropeFor(k + 1);
+		const first = next.pts[0];
+		const sy = H - NEXT_PULL + first.y;
+		// 连接线用和绳子同一套画法（同样的起伏、同样的收尾）：绳尾往下垂，接进下一圈的绳头
+		const link = buildRope({
+			points: [
+				[e.x, e.y],
+				[e.x + dir * 28, e.y + 10],
+				[e.x + dir * 60, e.y + 42],
+				[e.x + dir * 86, (e.y + sy) / 2],
+				[first.x + dir * 34, sy - 46],
+				[first.x + dir * 20, sy - 4],
+				[first.x, sy],
+			],
+			wobble: cfg.wobble,
+			seed: cfg.seed + 5,
+		});
+		join = ropePathD(link);
+	}
+	// 连在一起的绳头不画线头：有下一圈的不画绳尾的线头，不是第一圈的不画绳头的线头
+	const allFrays = frayPaths(drawn);
+	const frays = tall ? allFrays : allFrays.filter((_, i) => !(k > 0 && i < 3) && !(hasNext && i >= 3));
+	return { id, k, W, H, join, lead: LEAD[id], d: ropePathD(drawn), frays, items };
 }
 
-const variants = [makeVariant('wide'), makeVariant('tall')];
+const variants = [...chunks.map((c, k) => makeVariant('wide', c, k)), makeVariant('tall')];
 // 绳子上的“球钉”：一只只不同的小蝴蝶（src/assets/butterflies/b1..b9.png，已经统一成薄荷色 #35C8B4），
 // 按顺序一条文章一只，用完了从头再来
 const butterflyFiles = import.meta.glob<ImageMetadata>('../assets/butterflies/*.png', { eager: true, import: 'default' });
@@ -139,10 +191,10 @@ const ROPE_W = cfg.thickness;
 {
 	variants.map((v) => (
 		<div
-			class={`rope rope--${v.id}`}
+			class={`rope rope--${v.id}${v.k > 0 ? ' rope--next' : ''}`}
 			style={`--rope-light:${cfg.ropeColor}; --cw:${v.W}; aspect-ratio:${v.W}/${v.H}`}
 		>
-			<div class="lead" aria-hidden="true" style={`left:${pct((v.lead.x / v.W) * 100)}%; top:${pct((v.lead.y / v.H) * 100)}%`}><span class="perch" data-perch /></div>
+			{v.k === 0 && <div class="lead" aria-hidden="true" style={`left:${pct((v.lead.x / v.W) * 100)}%; top:${pct((v.lead.y / v.H) * 100)}%`}><span class="perch" data-perch /></div>}
 			<svg class="layer" viewBox={`0 0 ${v.W} ${v.H}`} aria-hidden="true" focusable="false">
 				<path class="line" d={v.d} fill="none" stroke-width={ROPE_W} stroke-linecap="round" stroke-linejoin="round" />
 				{cfg.twist && (
@@ -155,6 +207,7 @@ const ROPE_W = cfg.thickness;
 						opacity=".55"
 					/>
 				)}
+				{v.join && <path class="line" d={v.join} fill="none" stroke-width={ROPE_W} stroke-linecap="round" />}
 				{v.frays.map((fd) => (
 					<path class="line" d={fd} fill="none" stroke-width={0.6} stroke-linecap="round" />
 				))}
@@ -180,12 +233,13 @@ const ROPE_W = cfg.thickness;
 			</ol>
 
 			<svg class="layer pins" viewBox={`0 0 ${v.W} ${v.H}`} aria-hidden="true" focusable="false">
-				{v.items.map((it, n) => {
+				{v.items.map((it) => {
+					const n = it.n;
 					const bf = butterflies[n % butterflies.length];
 					const tilt = ((seeded(it.href, 'tilt') - 0.5) * 24).toFixed(1);
 					return (
 						<g>
-							<mask id={`bm-${v.id}-${n}`} maskUnits="userSpaceOnUse" style="mask-type:alpha" x={(it.p.x - bf.w / 2).toFixed(1)} y={(it.p.y - bf.h / 2).toFixed(1)} width={bf.w.toFixed(1)} height={bf.h.toFixed(1)}>
+							<mask id={`bm-${v.id}${v.k}-${n}`} maskUnits="userSpaceOnUse" style="mask-type:alpha" x={(it.p.x - bf.w / 2).toFixed(1)} y={(it.p.y - bf.h / 2).toFixed(1)} width={bf.w.toFixed(1)} height={bf.h.toFixed(1)}>
 								<image
 									href={bf.src}
 									x={(it.p.x - bf.w / 2).toFixed(1)}
@@ -198,7 +252,7 @@ const ROPE_W = cfg.thickness;
 							<rect
 								class="bf-shape"
 								style={`fill: var(--bf${n % 9})`}
-								mask={`url(#bm-${v.id}-${n})`}
+								mask={`url(#bm-${v.id}${v.k}-${n})`}
 								x={(it.p.x - bf.w / 2).toFixed(1)}
 								y={(it.p.y - bf.h / 2).toFixed(1)}
 								width={bf.w.toFixed(1)}
@@ -247,6 +301,11 @@ const ROPE_W = cfg.thickness;
 	   （百分比的外边距按父元素的宽度算，所以和画布等比） */
 	.rope--wide {
 		margin-top: calc(-100 / 700 * 100%);
+	}
+
+	/* 接着开的下一圈：往上靠一点，和上一圈的绳尾隔得不太远 */
+	.rope--wide.rope--next {
+		margin-top: calc(-130 / 700 * 100%); /* 和上面 NEXT_PULL 同一个数 */
 	}
 
 	/* 手机版：小于 600px 时换成竖直的绳子，宽屏版整个藏起来（display:none 读屏软件也读不到） */
