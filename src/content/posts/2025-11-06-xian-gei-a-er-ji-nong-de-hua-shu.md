@@ -28,3 +28,5 @@ source: bluesky
 我宣布这是我这周读到的最好看的书🥺
 
 已经好几天好久没有那么喜欢一本书了
+
+![](./xian-gei-a-er-ji-nong-de-hua-shu-1.jpg)

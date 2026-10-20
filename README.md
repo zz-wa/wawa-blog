@@ -56,7 +56,7 @@ coverAlt: 配图的文字说明
 说明：
 
 - 编辑页是纯静态的，**不会**改动网站的任何东西，只负责生成配置，所以不需要登录。编辑页会把没导出的修改记在浏览器里（localStorage），换一台电脑要重新来或者用“导入配置”粘贴。
-- 一根绳子挂 `rope.json` 里 `beads` 那么多张便利贴（现在是 9 张）。文章多于这个数时，更早的会放到下一页（`/2/`、`/3/` …），用同一根绳子。想让一页挂得更多，就在编辑页里把球钉加到更多（目前编辑页里球钉数量等于它自带的示例文章数 9，要加的话需要改编辑页，不是改网站）。
+- 绳子一圈挂 `rope.json` 里 `beads` 那么多条（现在是 9 条）。文章多了不分页，挂满一圈就在下面接着再开一圈，所有文章都在首页。
 - 手机（屏幕宽度小于 600px）不用这条蛇形绳子，会自动换成一条竖直、轻微弯曲的绳子，便利贴左右交替挂着；起伏用同样的算法和种子。所以在编辑页里只需要照顾宽屏的样子。
 - 绳子的画法在 `src/lib/rope.ts`，和编辑页里的算法逐行对应，两边必须保持一致，不然编辑页里的样子和网站上不一样。
 
@@ -65,7 +65,7 @@ coverAlt: 配图的文字说明
 - **分享图**：`public/og.png`（1200×630），标题或蝴蝶图换了之后运行 `node scripts/make-og.mjs` 重新生成。
 - **标题**：“wawa 的碎碎念”是用手写字体画成的矢量图 `src/assets/site-title.svg`，要改标题文字用 `scripts/make-title-svg.py`（需要先 `pip install fonttools`，命令写在脚本开头）。
 - **缓存**：`public/_headers` 给 `/_astro/`、`/fonts/`、`/images/` 设了长缓存。字体文件名是固定的，以后换字体就改文件名（比如加 `-v2`），不然访客的浏览器会一直用旧的。
-- **字体瘦身**：完整字体在 `font-src/pingfang-satuo.ttf`（不发布）；网站用的是只留下文章和页面里用到的字的 `public/fonts/pingfang-satuo-v1.woff2`（约 270 KB）。**每次新增或修改文章之后**重新生成一次，不然新字会退回楷体：
+- **字体瘦身**：完整字体在 `font-src/pingfang-satuo.ttf`（不发布）；网站用的是只留下文章和页面里用到的字的 `public/fonts/pingfang-satuo-v2.woff2`（约 270 KB）。**每次新增或修改文章之后**重新生成一次，不然新字会退回楷体：
   ```sh
   pip install fonttools brotli      # 只需要装一次
   node scripts/subset-font.mjs
@@ -82,7 +82,7 @@ src/content/posts/ 文章和文章里的图片
 src/data/rope.json 绳子的配置（用编辑页导出，不要手改）
 src/lib/rope.ts    绳子的算法
 src/components/    RopeTimeline（首页的绳子）、PhotoWall（照片墙）、Whisper（小声嘀咕）等
-src/pages/         首页（带分页）、/notes/、/reading/、RSS
+src/pages/         首页（一根绳子接着一圈圈往下）、/notes/、/reading/、RSS
 src/assets/        会被 Astro 优化的图片（蝴蝶、标题）
 scripts/           生成分享图、标题矢量图的小脚本
 DESIGN.md          设计说明

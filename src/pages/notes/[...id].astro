@@ -1,80 +1,19 @@
 ---
-// 碎碎念的单独页面：有标题的长文用完整文章页，短的就是一张放大的便利贴。
-import { getCollection, render } from 'astro:content';
-import StickyNote from '../../components/StickyNote.astro';
-import Whisper from '../../components/Whisper.astro';
+// 碎碎念的单独页面：所有碎碎念（不管有没有标题、长短）都用同一个安静的文章页，不放便利贴。
+import { getCollection } from 'astro:content';
 import Article from '../../layouts/Article.astro';
-import Base from '../../layouts/Base.astro';
-import { SITE_TITLE } from '../../consts';
-import { byDateDesc, excerpt, formatDate, isoDate, ogImageFor, type Post, wallLook } from '../../utils';
+import type { Post } from '../../utils';
 
 export async function getStaticPaths() {
-	const posts = (await getCollection('posts')).sort(byDateDesc);
+	const posts = await getCollection('posts');
 	return posts
-		.map((post, index) => ({ post, index }))
-		.filter(({ post }) => post.data.type === 'note')
-		.map(({ post, index }) => ({ params: { id: post.id }, props: { post, index } }));
+		.filter((post) => post.data.type === 'note')
+		.map((post) => ({ params: { id: post.id }, props: { post } }));
 }
 
-type Props = { post: Post; index: number };
+type Props = { post: Post };
 
-const { post, index } = Astro.props;
-const look = wallLook(post, index);
-const { Content } = await render(post);
-const date = formatDate(post.data.date);
+const { post } = Astro.props;
 ---
 
-{post.data.title ? <Article post={post} /> : (
-<Base
-	title={`碎碎念 ${date}`}
-	description={excerpt(post, 60)}
-	image={await ogImageFor(post)}
-	article={{ publishedTime: isoDate(post.data.date), headline: `碎碎念 ${date}`, author: SITE_TITLE }}
->
-	<main>
-		<StickyNote
-			as="article"
-			color={look.color}
-			tilt={look.tilt > 0 ? 1.2 : -1.2}
-			pinColor={look.pinColor}
-			pinX={look.pinX}
-			radius={look.radius}
-			class="single"
-		>
-			<time class="date" datetime={post.data.date.toISOString()}>{date}</time>
-			<div class="body">
-				<Content components={{ Whisper }} />
-			</div>
-		</StickyNote>
-		<a class="back" href="/">← 回到墙上</a>
-	</main>
-</Base>
-)}
-
-<style>
-	main :global(.single) {
-		max-width: 34em;
-		margin-top: 24px;
-		padding: 36px 32px 28px;
-		font-size: 1.05rem;
-	}
-
-	.date {
-		display: block;
-		margin-bottom: 10px;
-		font-family: var(--font-ui);
-		font-size: 0.88rem;
-		color: var(--ink-faint);
-	}
-
-	.body :global(p:last-child) {
-		margin-bottom: 0;
-	}
-
-	.back {
-		display: inline-block;
-		margin-top: 40px;
-		font-family: var(--font-ui);
-		font-size: 0.9rem;
-	}
-</style>
+<Article post={post} />

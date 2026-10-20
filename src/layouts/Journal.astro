@@ -1,0 +1,203 @@
+---
+// 首页、摄影、关于我共用的页面骨架（参考朋友做的版本：左边固定一栏 + 右边竖着的时间线），颜色、字体、蝴蝶都是我们自己的。
+// 宽屏：左边一栏（名字、问候、导航、最近在读）固定不动，右边的页面滚动；
+// 窄屏：同样的东西排在页面最上面，导航一排。
+import BaseHead from '../components/BaseHead.astro';
+import Doodle from '../components/Doodle.astro';
+import SiteTitle from '../components/SiteTitle.astro';
+import Sparkles from '../components/Sparkles.astro';
+import { GREETING, INTRO, NOW, SITE_DESCRIPTION, SITE_NAME } from '../consts';
+
+interface Props {
+	shelf: 'notes' | 'photos' | 'about';
+	title?: string;
+	description?: string;
+}
+
+const { shelf, title, description = SITE_DESCRIPTION } = Astro.props;
+const shelves = [
+	{ key: 'notes', label: '碎碎念', href: '/' },
+	{ key: 'photos', label: '摄影', href: '/photos/' },
+	{ key: 'about', label: '关于我', href: '/about/' },
+] as const;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={title ? `${title} | ${SITE_NAME}` : SITE_NAME} description={description} />
+	</head>
+	<body>
+		<div class="shell">
+			<!-- 背景的小星星、小圆点（装饰，在内容下面，不会盖住字） -->
+			<Sparkles
+				stars={[
+					[1, 17, 18, 'yellow', 'star'],
+					[34, 3, 10, 'mint', 'star'],
+					[58, 12, 14, 'lilac', 'star'],
+					[80, 5, 8, 'pink', 'dot'],
+					[92, 30, 16, 'blue', 'star'],
+					[8, 48, 12, 'blue', 'star'],
+					[22, 72, 10, 'pink', 'dot'],
+					[48, 86, 14, 'yellow', 'star'],
+					[70, 62, 9, 'yellow', 'dot'],
+					[88, 80, 12, 'mint', 'ring'],
+					[96, 55, 12, 'pink', 'star'],
+					[14, 92, 12, 'mint', 'ring'],
+				]}
+			/>
+			<aside class="side">
+				<a href="/" class="brand" aria-label="回到首页"><SiteTitle size="small" /><Doodle name="butterfly" class="flower" /></a>
+				<p class="hello">{GREETING}</p>
+				<p class="intro">{INTRO}</p>
+				<div class="nav-wrap">
+				<nav class="nav" aria-label="栏目">
+					{
+						shelves.map((s) => (
+							<a href={s.href} aria-current={s.key === shelf ? 'page' : undefined}>
+								{s.label}
+							</a>
+						))
+					}
+				</nav>
+				<Doodle name="sparkles" class="sparkles" />
+				</div>
+				<p class="now"><span class="now-label">{NOW.label}</span>{NOW.text}</p>
+				<slot name="side" />
+			</aside>
+			<div class="main" role="main"><slot /></div>
+		</div>
+		<script>
+			if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				const start = async () => {
+					const { default: Lenis } = await import('lenis');
+					await import('lenis/dist/lenis.css');
+					new Lenis({ autoRaf: true });
+				};
+				if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 1500 });
+				else setTimeout(start, 300);
+			}
+		</script>
+	</body>
+</html>
+
+<style>
+	.shell {
+		position: relative;
+		max-width: 1280px;
+		margin: 0 auto;
+	}
+
+	.side {
+		padding: 28px 24px 8px;
+	}
+
+	.brand :global(.site-title) {
+		height: 40px;
+	}
+
+	.hello,
+	.intro {
+		margin: 0;
+		color: var(--ink-soft);
+	}
+
+	.hello {
+		margin-top: 18px;
+		font-size: 1.05rem;
+	}
+
+	.intro {
+		margin-top: 6px;
+		font-size: 0.95rem;
+		color: var(--ink-faint);
+	}
+
+	.brand {
+		display: inline-flex;
+		align-items: flex-end;
+		gap: 4px;
+	}
+
+	.brand :global(.flower) {
+		width: 30px;
+		translate: 0 -10px;
+		rotate: 12deg;
+	}
+
+	.nav-wrap {
+		position: relative;
+	}
+
+	.nav-wrap :global(.sparkles) {
+		position: absolute;
+		top: -6px;
+		right: 8px;
+		width: 44px;
+	}
+
+	.nav {
+		display: flex;
+		gap: 22px;
+		margin-top: 26px;
+		font-size: 1.1rem;
+	}
+
+	.nav a {
+		color: var(--ink-soft);
+		text-decoration: none;
+		padding-bottom: 3px;
+		border-bottom: 1px solid transparent;
+	}
+
+	.nav a[aria-current='page'] {
+		color: var(--ink);
+		border-bottom-color: var(--ink);
+	}
+
+	.nav a:hover {
+		color: var(--ink);
+	}
+
+	.now {
+		margin: 28px 0 0;
+		font-size: 1.1rem;
+		color: var(--ink);
+	}
+
+	.now-label {
+		display: block;
+		font-size: 0.85rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-faint);
+	}
+
+	.main {
+		padding: 24px 24px 80px;
+	}
+
+	@media (min-width: 1024px) {
+		.shell {
+			display: grid;
+			grid-template-columns: 300px minmax(0, 1fr);
+		}
+
+		.side {
+			position: sticky;
+			top: 0;
+			height: 100dvh;
+			padding: 56px 24px 24px 40px;
+		}
+
+		.nav {
+			flex-direction: column;
+			gap: 14px;
+			align-items: flex-start;
+			margin-top: 36px;
+		}
+
+		.main {
+			padding: 56px 48px 96px 56px;
+		}
+	}
+</style>

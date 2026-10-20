@@ -135,7 +135,7 @@ wawa.blog 是 Waa 的小小天地，只放两类内容：碎碎念和读书分�
 
 标题用平方洒脱体（来自 100font.com，平方造字出品，作者声明免费商用，使用前以作者授权说明为准），硬笔手写的感觉，笔画有自然的粗细。授权写明“不得修改或制作衍生字体”，所以不截取字体子集，而是用原字体把标题“wawa 的碎碎念”写成矢量图（src/assets/site-title.svg，约 12KB），像 logo 一样嵌进页面，颜色跟随深色模式。
 
-如果以后要改标题文字，用原字体重新生成一次矢量图（命令：python scripts/make-title-svg.py 原字体.ttf "新标题" src/assets/site-title.svg，需要先 pip install fonttools）。全站所有文字（便利贴、正文、日期、小字）也都用平方洒脱体：完整的原字体（约 4.4MB）放在 font-src/pingfang-satuo.ttf，不发布到网站上；网站用的是只留下用到的字、转成 woff2 的瘦身版 public/fonts/pingfang-satuo-v1.woff2（约 270KB，Waa 确认要瘦身），用 @font-face 引入，font-display: swap，回退到系统楷体，head 里 preload。新增文章后运行 node scripts/subset-font.mjs 重新生成（见 README）。
+如果以后要改标题文字，用原字体重新生成一次矢量图（命令：python scripts/make-title-svg.py 原字体.ttf "新标题" src/assets/site-title.svg，需要先 pip install fonttools）。全站所有文字（便利贴、正文、日期、小字）也都用平方洒脱体：完整的原字体（约 4.4MB）放在 font-src/pingfang-satuo.ttf，不发布到网站上；网站用的是只留下用到的字、转成 woff2 的瘦身版 public/fonts/pingfang-satuo-v2.woff2（约 270KB，Waa 确认要瘦身），用 @font-face 引入，font-display: swap，回退到系统楷体，head 里 preload。新增文章后运行 node scripts/subset-font.mjs 重新生成（见 README）。
 
 文章页内容区收窄居中，最大宽度约 900px，标题和下面的内容左对齐。首页不缩在中间：问候语和便利贴墙放宽到接近整屏（最多 1400px），摘抄竖排在最右边一列，便利贴在右边铺开、分散在整个宽度上。行高约 1.8，不要塞满。
 

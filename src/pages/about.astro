@@ -1,0 +1,91 @@
+---
+// 预览：关于我。用我们自己的字（问候语和"时光催人长又长"那两句本来就是你的），
+// 统计是从文章里数出来的，加上你选的那句"这些碎碎念最早写在 Bluesky 上，后来搬到了这里。"
+import { getCollection } from 'astro:content';
+import { GREETING, STANDALONE_POSTS } from '../consts';
+import Journal from '../layouts/Journal.astro';
+import { byDateDesc, formatDate } from '../utils';
+import Doodle from '../components/Doodle.astro';
+
+const posts = (await getCollection('posts')).sort(byDateDesc);
+const first = posts.at(-1);
+const files = import.meta.glob('/src/content/posts/*.{jpg,jpeg,png,webp}', { eager: true });
+const photoCount = Object.keys(files).length;
+const motto = posts.find((p) => p.id === STANDALONE_POSTS[1].id);
+const mottoLines = (motto?.body ?? '').split(/\\?\n/).map((l) => l.trim()).filter(Boolean);
+---
+
+<Journal shelf="about" title="关于我">
+	<article class="about">
+		<h1 class="hi">{GREETING}<Doodle name="butterfly" class="flower" /></h1>
+		{mottoLines.length > 0 && <p class="motto">{mottoLines.map((l) => <span>{l}</span>)}</p>}
+		<dl class="tally">
+			<div><dt>第一篇</dt><dd>{first ? formatDate(first.data.date) : ''}</dd></div>
+			<div><dt>碎碎念</dt><dd><b>{posts.length}</b> 篇</dd></div>
+			<div><dt>照片</dt><dd><b>{photoCount}</b> 张</dd></div>
+		</dl>
+		<p class="moved">这些碎碎念最早写在 Bluesky 上，后来搬到了这里。</p>
+	</article>
+</Journal>
+
+<style>
+	.about {
+		max-width: 40rem;
+	}
+
+	.hi {
+		display: flex;
+		align-items: flex-end;
+		gap: 6px;
+		margin: 0 0 28px;
+		font-size: 1.9rem;
+		font-weight: 400;
+	}
+
+	.hi :global(.flower) {
+		width: 36px;
+		translate: 0 -8px;
+		rotate: 12deg;
+	}
+
+	.motto {
+		display: grid;
+		gap: 4px;
+		margin: 0 0 36px;
+		font-size: 1.5rem;
+		line-height: 1.7;
+		color: var(--ink-soft);
+	}
+
+	.tally {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px 40px;
+		margin: 0 0 32px;
+		padding: 18px 0;
+		border-top: 1px solid color-mix(in srgb, var(--ink) 35%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--ink) 35%, transparent);
+	}
+
+	.tally dt {
+		font-size: 0.9rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-faint);
+	}
+
+	.tally dd {
+		margin: 2px 0 0;
+		font-size: 1.2rem;
+	}
+
+	.tally b {
+		font-weight: 400;
+		font-size: 1.6rem;
+	}
+
+	.moved {
+		margin: 0;
+		font-size: 1.1rem;
+		color: var(--ink-soft);
+	}
+</style>

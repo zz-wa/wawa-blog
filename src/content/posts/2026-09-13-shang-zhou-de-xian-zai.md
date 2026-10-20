@@ -21,4 +21,10 @@ source: bluesky
 
 远方是自由，我还没拥有。
 
+![](./shang-zhou-de-xian-zai-2.jpg)
+
+![](./shang-zhou-de-xian-zai-3.jpg)
+
+![](./shang-zhou-de-xian-zai-4.jpg)
+
 窝在书局看了一下午，被文字填满，享受我的小小天地。

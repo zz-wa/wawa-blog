@@ -1,0 +1,45 @@
+---
+// 预览：摄影页。把文章旁边放着的图片都摆出来（没有框、没有胶带，只有图）。
+import { Image } from 'astro:assets';
+import Journal from '../layouts/Journal.astro';
+
+const files = import.meta.glob<ImageMetadata>('/src/content/posts/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' });
+const photos = Object.values(files);
+---
+
+<Journal shelf="photos" title="摄影">
+	<h2 class="head">摄影 <span class="count">{photos.length} 张</span></h2>
+	<div class="wall">
+		{photos.map((p) => <Image class="photo" src={p} width={420} densities={[1, 2]} alt="" />)}
+	</div>
+</Journal>
+
+<style>
+	.head {
+		margin: 0 0 28px;
+		font-size: 1.5rem;
+		font-weight: 400;
+		letter-spacing: 0.08em;
+	}
+
+	.count {
+		font-size: 0.95rem;
+		color: var(--ink-faint);
+		margin-left: 8px;
+	}
+
+	.wall {
+		columns: 3 220px;
+		column-gap: 18px;
+	}
+
+	.photo {
+		display: block;
+		width: 100%;
+		height: auto;
+		margin: 0 0 18px;
+		border-radius: 4px;
+		box-shadow: 0 1px 6px rgb(0 0 0 / 0.18);
+		break-inside: avoid;
+	}
+</style>

@@ -3,13 +3,14 @@
 // 宽屏：竖着写在页面两边的空白处（side 决定左边还是右边），同一边的从上往下一句一句排；署名是紧挨着右边的一列、落得更低，像落款；
 //       原文里换行的地方，就是竖排里的另一列（第一行在右边）。
 // 窄屏：横着放在绳子下面，靠右，一句一句排。
+// where="side"：放在左边栏“最近在读”下面，横着，靠左，不分屏幕大小。
 // side 是 hero 的：横着放在标题和简介下面的空白处，每一行单独一行。点它进入文章页。
 import { type Post, postHref } from '../utils';
 
 interface Props {
 	posts: { post: Post; side: 'left' | 'right' | 'hero' }[];
 	/** top = 宽屏用（放在两边的空白处），bottom = 窄屏用（绳子下面），hero = 标题下面的空白处（横着，不分屏幕大小） */
-	where: 'top' | 'bottom' | 'hero';
+	where: 'top' | 'bottom' | 'hero' | 'side';
 }
 
 const { posts, where } = Astro.props;
@@ -29,6 +30,8 @@ const linesOf = (post: Post) =>
 		? [posts.filter((q) => q.side === 'hero')]
 		: where === 'bottom'
 			? [posts.filter((q) => q.side !== 'hero')]
+			: where === 'side'
+				? [posts]
 			: [posts.filter((q) => q.side === 'right'), posts.filter((q) => q.side === 'left')]
 	).map(
 		(group, g) =>
@@ -105,6 +108,29 @@ const linesOf = (post: Post) =>
 			display: flex;
 			gap: 1.6em;
 		}
+	}
+
+	/* 左边栏里“最近在读”的下面：横着，靠左，字比正文轻一点，不抢眼 */
+	.quotes--side {
+		display: flex;
+		flex-direction: column;
+		gap: 26px;
+		margin-top: 26px;
+		text-align: left;
+	}
+
+	.quotes--side .quote {
+		rotate: -1.5deg;
+	}
+
+	.quotes--side .words {
+		font-size: 1.25rem;
+		line-height: 1.7;
+	}
+
+	.quotes--side .author {
+		font-size: 0.95rem;
+		text-align: left;
 	}
 
 	/* 窄屏：绳子下面，靠右，一句一句往下排 */

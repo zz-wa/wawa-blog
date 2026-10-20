@@ -7,7 +7,7 @@ import { readdirSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'n
 import { join, extname } from 'node:path';
 
 const SOURCE = 'font-src/pingfang-satuo.ttf';
-const OUT = 'public/fonts/pingfang-satuo-v1.woff2'; // 以后重新生成就把 v1 改成 v2，访客浏览器才会更新
+const OUT = 'public/fonts/pingfang-satuo-v2.woff2'; // 以后重新生成就把 v1 改成 v2，访客浏览器才会更新
 const SCAN = ['src', 'public/admin'];
 const EXT = new Set(['.md', '.mdx', '.astro', '.ts', '.json', '.html', '.mjs']);
 

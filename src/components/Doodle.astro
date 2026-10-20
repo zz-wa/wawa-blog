@@ -1,0 +1,46 @@
+---
+import { getImage } from 'astro:assets';
+import b7 from '../assets/butterflies/b7.png';
+// 手绘小装饰（线条画，用我们的绿色和点缀色，不带胶带）。预览版的左边栏、关于我页用。
+interface Props {
+	name: 'butterfly' | 'sparkles';
+	class?: string;
+}
+const { name, class: className } = Astro.props;
+// 小蝴蝶（你喜欢的那只嫩绿的）：用图片的形状当模子，填上嫩绿色
+const butterfly = name === 'butterfly' ? (await getImage({ src: b7, width: 120, format: 'webp' })).src : '';
+---
+
+<span class:list={['doodle', name, className]} aria-hidden="true">
+	{name === 'butterfly' && <span class="bf" style={`--m: url(${butterfly})`} />}
+	{
+		name === 'sparkles' && (
+			<svg viewBox="0 0 60 50" fill="none" stroke="var(--ink-soft)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M20 4 Q22 18 36 20 Q22 22 20 36 Q18 22 4 20 Q18 18 20 4 Z" fill="var(--spark-yellow)" fill-opacity=".5" />
+				<path d="M46 26 Q47 33 54 34 Q47 35 46 42 Q45 35 38 34 Q45 33 46 26 Z" fill="var(--spark-mint)" fill-opacity=".6" />
+			</svg>
+		)
+	}
+</span>
+
+<style>
+	.doodle {
+		display: inline-block;
+		line-height: 0;
+	}
+
+	.bf {
+		display: block;
+		width: 100%;
+		aspect-ratio: 1;
+		background: #9ad66f;
+		-webkit-mask: var(--m) center / contain no-repeat;
+		mask: var(--m) center / contain no-repeat;
+	}
+
+	.doodle :global(svg) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+</style>

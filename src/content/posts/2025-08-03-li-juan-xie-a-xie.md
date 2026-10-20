@@ -6,3 +6,5 @@ source: bluesky
 ---
 
 慢慢地写啊写啊，才成为此刻的自己。
+
+![](./li-juan-xie-a-xie-1.jpg)
